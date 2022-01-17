@@ -122,7 +122,7 @@ class Promise {
       if (this.status === PENDING) {
         // 原则上pending可以不用加异步处理过程，但是测试用例会检查所有onFulfilled、onRejected是否会异步调用
         this.fulfillCallbacks.push(() => {
-          setTimeout(() => {
+          process.nextTick(() => {
             // const { change } = mutationObserver(() => {
             try {
               // 我需要判断上一次返回的是不是Promise
@@ -136,7 +136,7 @@ class Promise {
         });
         this.rejectedCallbacks.push(() => {
           // const { change } = mutationObserver(() => {
-          setTimeout(() => {
+          process.nextTick(() => {
             try {
               let x = onRejected(this.reason);
               resolvePromise(p1, x, resolve, reject);
@@ -149,7 +149,7 @@ class Promise {
       }
       if (this.status === FULFILLED) {
         // const { change } = mutationObserver(() => {
-        setTimeout(() => {
+        process.nextTick(() => {
           // })
           try {
             let x = onFulfilled(this.value);
@@ -162,7 +162,7 @@ class Promise {
       }
       if (this.status === REJECTED) {
         // const { change } = mutationObserver(() => {
-        setTimeout(() => {
+        process.nextTick(() => {
           try {
             let x = onRejected(this.reason);
             resolvePromise(p1, x, resolve, reject);
@@ -174,6 +174,72 @@ class Promise {
       }
     });
     return p1;
+  }
+
+  catch(errorCallback) {
+    return this.then(null, errorCallback);
+  }
+
+  static all(promises) {
+    const result = [];
+    let counter = 0;
+    return new Promise((resolve, reject) => {
+      const processResult = (data, index) => {
+        result[index] = data;
+        if (++counter === promises.length) {
+          resolve(result);
+        }
+      };
+      promises.forEach((promise, index) => {
+        Promise.resolve(promise).then(
+          (data) => processResult(data, index),
+          (err) => {
+            reject(err);
+          }
+        );
+      });
+    });
+  }
+
+  // 本质上还是借助promise的状态一经确认无法改变
+  static race(promises) {
+    return new Promise((resolve, reject) => {
+      promises.forEach((promise) => {
+        Promise.resolve(promise).then(resolve, reject);
+      });
+    });
+  }
+
+  static allSettled(promises) {
+    const result = [];
+    let counter = 0;
+    return new Promise((resolve) => {
+      promises.forEach((promise, index) => {
+        promise.then(
+          (res) => {
+            result[index] = { status: 'fulfilled', value: res };
+            if (++counter === promises.length) resolve(result);
+          },
+          (err) => {
+            result[index] = { status: 'rejected', reason: err };
+            if (++counter === promises.length) resolve(result);
+          }
+        );
+      });
+    });
+  }
+
+  finally(cb) {
+    return this.then(
+      (value) => {
+        cb();
+        return value;
+      },
+      (error) => {
+        cb();
+        throw error;
+      }
+    );
   }
 
   static resolve(value) {
