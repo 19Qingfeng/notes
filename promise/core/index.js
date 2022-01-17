@@ -1,10 +1,57 @@
+// const promisesAplusTests = require('promises-aplus-tests');
+
 const FULFILLED = 'fulfilled';
 const REJECTED = 'rejected';
 const PENDING = 'pending';
 
 // 核心：根据规范判断x的结果判断promise是resolve还是reject
 function resolvePromise(promise, x, resolve, reject) {
-  console.log(promise, 'promise');
+  // If promise and x refer to the same object, reject promise with a TypeError as the reason.
+  if (promise === x) {
+    return reject(new TypeError('循环引用'));
+  }
+  if ((typeof x === 'object' && x !== null) || typeof x === 'function') {
+    // If both resolvePromise and rejectPromise are called, or multiple calls to the same argument are made, the first call takes precedence, and any further calls are ignored
+    // 按照规范 防止Then方法中返回的Promise并非严格按照规范定义的Promise，保证Promise的resolvePromise和rejectPromise仅会被调用一次（状态确认后再次重置状态无效）
+    let called = false;
+    try {
+      // If retrieving the property x.then results in a thrown exception e, reject promise with e as the reason.
+      // 如果是Promise
+      const then = x.then;
+      if (typeof then === 'function') {
+        // If then is a function, call it with x as this, first argument resolvePromise, and second argument rejectPromise
+        // x.then 是函数直接当作Promise处理
+        then.call(
+          x,
+          (y) => {
+            // If/when resolvePromise is called with a value y, run [[Resolve]](promise, y)
+            // then中返回的 Promise 如果仍resolve一个Promise，那么应该递归处理Promise的resolve值返回给then 而不是返回这个Promise
+            if (called) return;
+            called = true;
+            resolvePromise(promise, y, resolve, reject);
+          },
+          (r) => {
+            // If/when rejectPromise is called with a reason r, reject promise with r.
+            if (!called) {
+              called = true;
+              reject(r);
+            }
+          }
+        );
+      } else {
+        // If then is not a function, fulfill promise with x.
+        resolve(x);
+      }
+    } catch (e) {
+      if (called) return;
+      // 同理，then报错时直接将状态重置为reject 并且不允许重置
+      called = true;
+      reject(e);
+    }
+  } else {
+    // If x is not an object or function, fulfill promise with x
+    resolve(x);
+  }
 }
 
 // 当然还可以写一个销毁，回头有空处理。先关注核心逻辑
@@ -57,11 +104,21 @@ class Promise {
   // 链式调用
   // 规范2.2.4 onFulfilled or onRejected must not be called until the execution context stack contains only platform code. 表示这两个函数不应该在当前执行栈中被调用
   then(onFulfilled, onRejected) {
+    // Promise 值的穿透性
+    onFulfilled =
+      typeof onFulfilled === 'function' ? onFulfilled : (res) => res;
+    onRejected =
+      typeof onRejected === 'function'
+        ? onRejected
+        : (error) => {
+            throw error;
+          };
     let p1 = new Promise((resolve, reject) => {
       if (this.status === PENDING) {
         // 原则上pending可以不用加异步处理过程，但是测试用例会检查所有onFulfilled、onRejected是否会异步调用
         this.fulfillCallbacks.push(() => {
-          const { change } = mutationObserver(() => {
+          setTimeout(() => {
+            // const { change } = mutationObserver(() => {
             try {
               // 我需要判断上一次返回的是不是Promise
               let x = onFulfilled(this.value);
@@ -70,10 +127,11 @@ class Promise {
               reject(e);
             }
           });
-          change();
+          // change();
         });
         this.rejectedCallbacks.push(() => {
-          const { change } = mutationObserver(() => {
+          // const { change } = mutationObserver(() => {
+          setTimeout(() => {
             try {
               let x = onRejected(this.reason);
               resolvePromise(p1, x, resolve, reject);
@@ -81,11 +139,13 @@ class Promise {
               reject(e);
             }
           });
-          change();
+          // change();
         });
       }
       if (this.status === FULFILLED) {
-        const { change } = mutationObserver(() => {
+        // const { change } = mutationObserver(() => {
+        setTimeout(() => {
+          // })
           try {
             let x = onFulfilled(this.value);
             resolvePromise(p1, x, resolve, reject);
@@ -93,10 +153,11 @@ class Promise {
             reject(e);
           }
         });
-        change();
+        // change();
       }
       if (this.status === REJECTED) {
-        const { change } = mutationObserver(() => {
+        // const { change } = mutationObserver(() => {
+        setTimeout(() => {
           try {
             let x = onRejected(this.reason);
             resolvePromise(p1, x, resolve, reject);
@@ -104,11 +165,20 @@ class Promise {
             reject(e);
           }
         });
-        change();
+        // change();
       }
     });
     return p1;
   }
 }
 
-// module.exports = Promise;
+Promise.deferred = function () {
+  let dfd = {};
+  dfd.promise = new Promise((resolve, reject) => {
+    dfd.resolve = resolve;
+    dfd.reject = reject;
+  });
+  return dfd;
+};
+
+module.exports = Promise;

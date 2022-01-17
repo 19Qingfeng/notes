@@ -1,0 +1,24 @@
+{
+  "name": "notes",
+  "version": "1.0.0",
+  "description": "这个仓库中保存尚未整理成文章发布的代码笔记。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/19Qingfeng/notes.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/19Qingfeng/notes/issues"
+  },
+  "homepage": "https://github.com/19Qingfeng/notes#readme",
+  "dependencies": {
+    "browserify": "^17.0.0",
+    "promises-aplus-tests": "^2.1.2"
+  }
+}
