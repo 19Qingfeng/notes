@@ -79,6 +79,11 @@ class Promise {
     this.rejectedCallbacks = [];
 
     const resolve = (value) => {
+      // 满足Promise.resolve处理结果 并非规范内容 - start
+      if (value instanceof Promise) {
+        return value.then(resolve, reject);
+      }
+      // end
       if (this.status === PENDING) {
         this.status = FULFILLED;
         this.value = value;
@@ -169,6 +174,18 @@ class Promise {
       }
     });
     return p1;
+  }
+
+  static resolve(value) {
+    return new Promise((resolve, reject) => {
+      resolve(value);
+    });
+  }
+
+  static reject(reason) {
+    return new Promise((resolve, reject) => {
+      reject(reason);
+    });
   }
 }
 
