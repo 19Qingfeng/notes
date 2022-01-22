@@ -53,3 +53,5 @@ Promise.resolve()
   .then(() => {
     console.log('6');
   });
+
+[1, 2, micro, 3, micro, 4, k, 5, 6];
