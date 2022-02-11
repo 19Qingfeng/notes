@@ -21,23 +21,26 @@ function resolvePromise(promise, x, resolve, reject) {
       if (typeof then === 'function') {
         // If then is a function, call it with x as this, first argument resolvePromise, and second argument rejectPromise
         // x.then 是函数直接当作Promise处理
-        then.call(
-          x,
-          (y) => {
-            // If/when resolvePromise is called with a value y, run [[Resolve]](promise, y)
-            // then中返回的 Promise 如果仍resolve一个Promise，那么应该递归处理Promise的resolve值返回给then 而不是返回这个Promise
-            if (called) return;
-            called = true;
-            resolvePromise(promise, y, resolve, reject);
-          },
-          (r) => {
-            // If/when rejectPromise is called with a reason r, reject promise with r.
-            if (!called) {
+        // 如果x是Promise 在ES规范中需要被推迟到下一次loop中去调用then
+        process.nextTick(() => {
+          then.call(
+            x,
+            (y) => {
+              // If/when resolvePromise is called with a value y, run [[Resolve]](promise, y)
+              // then中返回的 Promise 如果仍resolve一个Promise，那么应该递归处理Promise的resolve值返回给then 而不是返回这个Promise
+              if (called) return;
               called = true;
-              reject(r);
+              resolvePromise(promise, y, resolve, reject);
+            },
+            (r) => {
+              // If/when rejectPromise is called with a reason r, reject promise with r.
+              if (!called) {
+                called = true;
+                reject(r);
+              }
             }
-          }
-        );
+          );
+        })
       } else {
         // If then is not a function, fulfill promise with x.
         resolve(x);
@@ -116,8 +119,8 @@ class Promise {
       typeof onRejected === 'function'
         ? onRejected
         : (error) => {
-            throw error;
-          };
+          throw error;
+        };
     let p1 = new Promise((resolve, reject) => {
       if (this.status === PENDING) {
         // 原则上pending可以不用加异步处理过程，但是测试用例会检查所有onFulfilled、onRejected是否会异步调用
