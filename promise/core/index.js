@@ -79,7 +79,7 @@ class Promise {
     this.rejectedCallbacks = [];
 
     const resolve = (value) => {
-      // 满足Promise.resolve处理结果 并非规范内容 - start
+      // 满足Promise.resolve递归处理Promise结果 并非规范内容 - start
       if (value instanceof Promise) {
         return value.then(resolve, reject);
       }
@@ -229,6 +229,7 @@ class Promise {
     });
   }
 
+  // TODO:Finally有问题
   finally(cb) {
     return this.then(
       (value) => {
