@@ -10,4 +10,8 @@
 
 ## generator 目录
 
+Co 库简单实现。
+
 generator polyfill 简单实现。
+
+async babel 分析。
