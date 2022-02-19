@@ -7,3 +7,7 @@
 ## promise 目录
 
 基于 Promise A+ 规范实现一款 Promise，同时拓展 Promise.resolve、Promise.reject、Promise.all、Promise.race、Promise.finally、Promise.allSettled 等。
+
+## generator 目录
+
+generator polyfill 简单实现。
