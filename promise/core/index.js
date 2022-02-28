@@ -11,6 +11,10 @@ function resolvePromise(promise, x, resolve, reject) {
     return reject(new TypeError('循环引用'));
   }
   if ((typeof x === 'object' && x !== null) || typeof x === 'function') {
+    // TODO: ECMA规范中如果返回了一个Promise 会将该Promise在此处理成为一次micro
+    // process.nextTick(() => {
+
+    // })
     // If both resolvePromise and rejectPromise are called, or multiple calls to the same argument are made, the first call takes precedence, and any further calls are ignored
     // 按照规范 防止Then方法中返回的Promise并非严格按照规范定义的Promise，保证Promise的resolvePromise和rejectPromise仅会被调用一次（状态确认后再次重置状态无效）
     let called = false;
@@ -40,7 +44,7 @@ function resolvePromise(promise, x, resolve, reject) {
               }
             }
           );
-        })
+        });
       } else {
         // If then is not a function, fulfill promise with x.
         resolve(x);
@@ -119,8 +123,8 @@ class Promise {
       typeof onRejected === 'function'
         ? onRejected
         : (error) => {
-          throw error;
-        };
+            throw error;
+          };
     let p1 = new Promise((resolve, reject) => {
       if (this.status === PENDING) {
         // 原则上pending可以不用加异步处理过程，但是测试用例会检查所有onFulfilled、onRejected是否会异步调用

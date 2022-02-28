@@ -1,9 +1,12 @@
 const path = require('path');
 const fs = require('fs');
+const EventEmitter = require('events');
 
 // 创建三个字节大小的BUFFER内存空间
 const buf = Buffer.alloc(3);
 
+// TODO: 读写不分离 且 fs.open 两次可以同时进行，现在是嵌套依次解决
+// TODO: NODE中 events 发布订阅解决
 function copy(sourcePath, targetPath, callback) {
   // 读偏移量
   let readPosition = 0;
