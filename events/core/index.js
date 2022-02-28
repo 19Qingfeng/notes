@@ -6,6 +6,10 @@ EventsEmitter.prototype.on = function (eventName, callback) {
     this._events = {};
   }
 
+  if (eventName !== 'newListener') {
+    this.emit('newListener', eventName);
+  }
+
   (this._events[eventName] || (this._events[eventName] = [])).push(callback);
 };
 
@@ -13,6 +17,10 @@ EventsEmitter.prototype.on = function (eventName, callback) {
 EventsEmitter.prototype.once = function (eventName, callback) {
   if (!this._events) {
     this._events = {};
+  }
+
+  if (eventName !== 'newListener') {
+    this.emit('newListener', eventName);
   }
 
   const onceFn = (...params) => {
