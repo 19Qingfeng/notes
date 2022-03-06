@@ -4,7 +4,8 @@
   "description": "这个仓库中保存尚未整理成文章发布的代码笔记。",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:express": "nodemon ./express/example/index.js"
   },
   "repository": {
     "type": "git",
@@ -19,6 +20,8 @@
   "homepage": "https://github.com/19Qingfeng/notes#readme",
   "dependencies": {
     "browserify": "^17.0.0",
+    "express": "^4.17.3",
+    "nodemon": "^2.0.15",
     "promises-aplus-tests": "^2.1.2"
   }
 }
