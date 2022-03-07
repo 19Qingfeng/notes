@@ -7,8 +7,9 @@ function Application() {
   this.router = new Router()
 }
 
-Application.prototype.get = function (path, handler) {
-  this.router.get(path, handler)
+// TODO:或许会传递多个handler
+Application.prototype.get = function (path, ...handlers) {
+  this.router.get(path, handlers)
 }
 
 Application.prototype.listen = function () {
