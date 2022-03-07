@@ -4,14 +4,16 @@ const express = require('../index');
 const app = express();
 
 app.get('/', (req, res, next) => {
-  console.log('1');
+  console.log('111');
   next()
-  res.end('hello');
 }, function (req, res, next) {
   console.log('2')
   next()
 }, function (req, res, next) {
   console.log('3')
+  next()
+}, function (req, res, next) {
+  console.log('4')
   res.end('end with 3')
 });
 

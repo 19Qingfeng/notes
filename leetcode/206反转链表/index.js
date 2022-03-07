@@ -66,15 +66,15 @@ class LinkList {
 
   // 反转链表
   reverse() {
+    // 核心思路还是通过中间变量保存 依次替换
     // 临时变量 遍历方法
     let prev = null
     let current = this.head
     while (current) {
-      // 保存下一个节点
       const next = current.next
       current.next = prev
-      prev = next
-      current = current.next
+      prev = current
+      current = next
     }
   }
 }
