@@ -4,9 +4,10 @@ const server1 = new Koa();
 const server2 = new Koa();
 
 server1.use((ctx) => {
-  console.log(ctx.request.path);
-  console.log(ctx.request.url, 'url');
-  console.log(ctx.request, 'url');
+  console.log(ctx.request.path); // 存在
+  console.log(ctx.req.path, 'url'); // 不存在
+  console.log(ctx.request.req.path, 'url'); // 不存在
+  console.log(ctx.path) // 存在
 });
 
 server2.use((ctx) => {

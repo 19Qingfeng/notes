@@ -6,7 +6,7 @@ const response = require('./response');
 class Koa {
   constructor() {
     // 不同实例之间需要隔离Context 每次new Koa时的应用隔离
-    // 其实我理解这里每次请求来时完全是独立的
+    // 其实我理解这里每次请求来时createContext进行控制完全是独立的
     this.context = Object.create(context);
     this.request = Object.create(request);
     this.response = Object.create(response);
@@ -23,7 +23,10 @@ class Koa {
     const response = Object.create(this.response);
     context.app = request.app = response.app = this;
     context.request = request;
+    // 这里因为 request 中的Getter/Setter 属性的代理
+    // 访问ctx.request.url时相当于访问ctx.request.req.url
     context.request.req = req;
+    context.req = req
     return context;
   }
 
