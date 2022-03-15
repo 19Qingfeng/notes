@@ -3,8 +3,24 @@ const Koa = require('./core/application');
 const server1 = new Koa();
 const server2 = new Koa();
 
-server1.use((ctx) => {
-  ctx.response.body = 'ok';
+server1.use(async (ctx, next) => {
+  ctx.response.body = { a: 'ok' };
+  console.log(1);
+  await next();
+  console.log(4);
+  // 对比这两个你就可以看到getter和setter的屏蔽作用了
+  // console.log(ctx, 'ctx');
+  // console.log(ctx.response.__proto__.__proto__, '真正的 response');
+});
+
+server1.use(async (ctx, next) => {
+  console.log(2);
+  await next();
+  ctx.response.body = { a: '2ok' };
+  console.log(3);
+  // 对比这两个你就可以看到getter和setter的屏蔽作用了
+  // console.log(ctx, 'ctx');
+  // console.log(ctx.response.__proto__.__proto__, '真正的 response');
 });
 
 server2.use((ctx) => {
