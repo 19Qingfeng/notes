@@ -21,6 +21,7 @@
   "dependencies": {
     "browserify": "^17.0.0",
     "express": "^4.17.3",
+    "jest": "^27.5.1",
     "koa": "^2.13.4",
     "nodemon": "^2.0.15",
     "promises-aplus-tests": "^2.1.2"
