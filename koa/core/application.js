@@ -1,5 +1,6 @@
 const http = require('http');
 const EventEmitter = require('events');
+const stream = require('stream');
 const context = require('./context');
 const request = require('./request');
 const response = require('./response');
@@ -56,6 +57,8 @@ class Koa extends EventEmitter {
       if (body) {
         if (typeof body === 'string' || Buffer.isBuffer(body)) {
           return res.end(body);
+        } else if (body instanceof stream) {
+          return body.pipe(res);
         } else if (typeof body === 'object') {
           return res.end(JSON.stringify(body));
         }
