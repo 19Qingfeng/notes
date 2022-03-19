@@ -25,5 +25,8 @@
     "koa": "^2.13.4",
     "nodemon": "^2.0.15",
     "promises-aplus-tests": "^2.1.2"
+  },
+  "devDependencies": {
+    "@babel/preset-typescript": "^7.16.7"
   }
 }
