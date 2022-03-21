@@ -17,7 +17,7 @@ const reactive = (obj) => {
     return reactiveObj;
   }
 
-  // 1.2 fixed 对于已经reactive包装的对象在此进行包装时 直接返回reactvie对象 并不会在此包装
+  // 1.2 fixed 对于已经reactive包装的对象在此进行包装时 直接返回reactive对象 并不会在此包装
   if (obj[ReactiveFlags.IS_REACTIVE]) {
     // 如果传入的是Proxy对象，上边的操作一定会进入get
     return obj;

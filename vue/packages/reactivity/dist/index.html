@@ -32,25 +32,29 @@
 
     // 1.1 问题 代理已经代理过的对象，希望此时代理不要生效依然返回同一个代理对象
     // 简单来说也就是递归调用reactive希望返回同一个proxy
-    const reactiveData1 = reactive(reactiveData)
-    console.log(reactiveData1 === reactiveData)
-    console.log(reactiveData1, 'reactiveData1')
+    // const reactiveData1 = reactive(reactiveData)
+    // console.log(reactiveData1 === reactiveData)
+    // console.log(reactiveData1, 'reactiveData1')
 
     // Effect 会首次直接调用下，之后在依赖的响应式数据变化后它会产生变化
+    // effect(() => {
+    // 2.1 嵌套Effect情况处理
     effect(() => {
-      // 2.1 嵌套Effect情况处理
-      effect(() => {
-        // effect执行时会进行依赖收集
-        app.innerHTML = `name:${reactiveData.name}.age:${reactiveData.age};`
-      })
-      // 这里如果单纯的将当前Effect挂载在全局的话 这里就会出问题 
-      // 这里应该是第二个Effect 但是这样的话就收集不到依赖了
-      app.innerHTML = `name:${reactiveData.name}.age:${reactiveData.age};address:${reactiveData.address}`
+      // 3.2 Effect中无限触发setter 造成递归会无限循环
+      reactiveData.name = Math.random()
+      console.log('re')
+      // effect执行时会进行依赖收集
+      app.innerHTML = `name:${reactiveData.name}.age:${reactiveData.age};`
     })
+    // 这里如果单纯的将当前Effect挂载在全局的话 这里就会出问题 
+    // 这里应该是第二个Effect 但是这样的话就收集不到依赖了
+    //   app.innerHTML = `name:${reactiveData.name}.age:${reactiveData.age};address:${reactiveData.address}`
+    // })
 
-    setTimeout(() => {
-      reactiveData.name = 'wang.haoyu'
-    }, 1000);
+    // setTimeout(() => {
+    //   console.log('timer执行')
+    //   reactiveData.name = 'wang.haoyu'
+    // }, 1000);
   </script>
 </body>
 

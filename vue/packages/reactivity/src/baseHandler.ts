@@ -1,4 +1,4 @@
-import { activeEffect } from './effect';
+import { activeEffect, track, trigger } from './effect';
 
 // IS_REACTIVE 表示当前已经被Vue的reactive包装成为了reactive对象
 export const enum ReactiveFlags {
@@ -13,15 +13,25 @@ export const mutableHandlers = {
     if (key === ReactiveFlags.IS_REACTIVE) {
       return true;
     }
+
     // 依赖收集时 一个对象的一个key 可能对应关联多个Effect
-    track(target, key, receiver);
+    track(target, 'get', key);
 
     // 配合Reflect解决当访问get属性递归依赖this的问题
     return Reflect.get(target, key, receiver);
   },
   // 当进行设置时进行触发更新
   set(target, key, value, receiver) {
+    // 如果两次变化的值相同 那么不会触发更新
+    const oldValue = target[key];
     // 配合Reflect解决当访问get属性递归依赖this的问题
-    return Reflect.get(target, key, receiver);
+    const result = Reflect.set(target, key, value, receiver);
+
+    if (value !== oldValue) {
+      // 触发更新
+      trigger(target, 'set', key, value, oldValue);
+    }
+
+    return result;
   },
 };

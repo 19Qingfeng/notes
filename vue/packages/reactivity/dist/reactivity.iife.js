@@ -28,6 +28,7 @@ var VueReactivity = (() => {
   var activeEffect;
   var ReactiveEffect = class {
     constructor(fn) {
+      this.deps = [];
       this.fn = fn;
       this.active = true;
       this.parent = void 0;
@@ -49,6 +50,40 @@ var VueReactivity = (() => {
     const _effect = new ReactiveEffect(fn);
     _effect.run();
   }
+  var targetMap = /* @__PURE__ */ new WeakMap();
+  function track(target, type, key) {
+    if (!activeEffect) {
+      return;
+    }
+    let depsMap = targetMap.get(target);
+    if (!depsMap) {
+      targetMap.set(target, depsMap = /* @__PURE__ */ new Map());
+    }
+    let deps = depsMap.get(key);
+    if (!deps) {
+      depsMap.set(key, deps = /* @__PURE__ */ new Set());
+    }
+    const shouldTrack = !deps.has(activeEffect);
+    if (shouldTrack) {
+      deps.add(activeEffect);
+      activeEffect.deps.push(deps);
+    }
+  }
+  function trigger(target, type, key, value, oldValue) {
+    const depsMap = targetMap.get(target);
+    if (!depsMap) {
+      return;
+    }
+    const deps = depsMap.get(key);
+    if (!deps) {
+      return;
+    }
+    deps.forEach((dep) => {
+      if (activeEffect !== dep) {
+        dep.run();
+      }
+    });
+  }
 
   // packages/share/src/index.ts
   function isPlainObj(value) {
@@ -61,11 +96,16 @@ var VueReactivity = (() => {
       if (key === "__v_isReactive" /* IS_REACTIVE */) {
         return true;
       }
-      track(target, key, receiver);
+      track(target, "get", key);
       return Reflect.get(target, key, receiver);
     },
     set(target, key, value, receiver) {
-      return Reflect.get(target, key, receiver);
+      const oldValue = target[key];
+      const result = Reflect.set(target, key, value, receiver);
+      if (value !== oldValue) {
+        trigger(target, "set", key, value, oldValue);
+      }
+      return result;
     }
   };
 
