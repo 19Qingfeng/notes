@@ -1,12 +1,9 @@
 import { isPlainObj } from '@vue/share';
+import { ReactiveFlags } from './baseHandler';
+import { mutableHandlers } from './baseHandler';
 
 // 利用全局对象的形式来保存已经处理为proxy的对象
 const reactiveMap = new WeakMap();
-
-// IS_REACTIVE 表示当前已经被Vue的reactive包装成为了reactive对象
-const enum ReactiveFlags {
-  IS_REACTIVE = '__v_isReactive',
-}
 
 const reactive = (obj) => {
   // 传入非对象
@@ -26,24 +23,9 @@ const reactive = (obj) => {
     return obj;
   }
   // 声明响应式数据
-  const proxy = new Proxy(obj, {
-    // 当进行访问时进行依赖收集
-    get(target, key, receiver) {
-      // 1.2 调用reactive包裹已经为reactive处理后的proxy对象时处理
-      if (key === ReactiveFlags.IS_REACTIVE) {
-        return true;
-      }
-      // 配合Reflect解决当访问get属性递归依赖this的问题
-      return Reflect.get(target, key, receiver);
-    },
-    // 当进行设置时进行触发更新
-    set(target, key, value, receiver) {
-      // 配合Reflect解决当访问get属性递归依赖this的问题
-      return Reflect.get(target, key, receiver);
-    },
-  });
+  const proxy = new Proxy(obj, mutableHandlers);
 
-  // 缓存当前对象以及Proxy对象
+  // 缓存当前对象以及Proxy对象 避免重复对于多个相同对象进行reactive
   reactiveMap.set(obj, proxy);
 
   return proxy;

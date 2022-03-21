@@ -25,13 +25,46 @@ var VueReactivity = (() => {
   });
 
   // packages/reactivity/src/effect.ts
-  function effect() {
+  var activeEffect;
+  var ReactiveEffect = class {
+    constructor(fn) {
+      this.fn = fn;
+      this.active = true;
+    }
+    run() {
+      if (!this.active) {
+        this.fn();
+      }
+      try {
+        activeEffect = this;
+        return this.fn();
+      } finally {
+        activeEffect = void 0;
+      }
+    }
+  };
+  function effect(fn) {
+    const _effect = new ReactiveEffect(fn);
+    _effect.run();
   }
 
   // packages/share/src/index.ts
   function isPlainObj(value) {
     return typeof value === "object" && value !== null;
   }
+
+  // packages/reactivity/src/baseHandler.ts
+  var mutableHandlers = {
+    get(target, key, receiver) {
+      if (key === "__v_isReactive" /* IS_REACTIVE */) {
+        return true;
+      }
+      return Reflect.get(target, key, receiver);
+    },
+    set(target, key, value, receiver) {
+      return Reflect.get(target, key, receiver);
+    }
+  };
 
   // packages/reactivity/src/reactive.ts
   var reactiveMap = /* @__PURE__ */ new WeakMap();
@@ -46,17 +79,7 @@ var VueReactivity = (() => {
     if (obj["__v_isReactive" /* IS_REACTIVE */]) {
       return obj;
     }
-    const proxy = new Proxy(obj, {
-      get(target, key, receiver) {
-        if (key === "__v_isReactive" /* IS_REACTIVE */) {
-          return true;
-        }
-        return Reflect.get(target, key, receiver);
-      },
-      set(target, key, value, receiver) {
-        return Reflect.get(target, key, receiver);
-      }
-    });
+    const proxy = new Proxy(obj, mutableHandlers);
     reactiveMap.set(obj, proxy);
     return proxy;
   };
