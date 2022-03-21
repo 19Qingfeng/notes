@@ -57,3 +57,24 @@ for (let i = 0; i < 100 * 1000; i++) {
 }
 rotate2(arr2, 90 * 1000);
 console.timeEnd('rotate2');
+
+/**
+ * @param {number[]} nums
+ * @param {number} k
+ * @return {void} Do not return anything, modify nums in-place instead.
+ */
+var rotate = function (nums: number[], k: number) {
+  const length = nums.length;
+  let step = k;
+  while (step > length) {
+    step = Math.abs(k % length);
+  }
+  const first = nums.slice(-step);
+  const second = nums.slice(0, length - step);
+  const result = first.concat(second);
+  console.log(result, 'result');
+  for (let i = 0; i < nums.length; i++) {
+    nums[i] = result[i];
+  }
+};
+console.log(rotate([1, 2], 5));

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "node ./scripts/dev.js"
+    "dev-global": "node ./scripts/dev.js reactive -f global"
   },
   "keywords": [],
   "author": "",
