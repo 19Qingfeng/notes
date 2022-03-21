@@ -2,12 +2,10 @@ const { build } = require('esbuild');
 const { resolve } = require('path');
 const argv = require('minimist')(process.argv.slice(2));
 
-console.log(argv, 'argv');
-
 const target = argv['_'];
 const format = argv['f'];
 
-const pkg = require(resolve(__dirname, '../packages/reactive/package.json'));
+const pkg = require(resolve(__dirname, '../packages/reactivity/package.json'));
 
 const outputFormat = format.startsWith('global')
   ? 'iife'
@@ -29,7 +27,10 @@ build({
   globalName: pkg.buildOptions?.name, // 打包后全局注册的变量名 IIFE下生效
   platform: outputFormat === 'cjs' ? 'node' : 'browser', // 平台
   watch: {
-    onRebuild() {
+    onRebuild(error) {
+      if (error) {
+        console.log(error, 'error');
+      }
       console.log(`reBuild by ${Date.now()}`);
     },
   },
