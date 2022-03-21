@@ -13,7 +13,7 @@ const nodes = [
 
 /**
  * 思路不错本质上还是利用引用类型的特点
- * 时间复杂度 O(2n)
+ * 时间复杂度 O(n)
  * @param {*} arr
  * @returns
  */

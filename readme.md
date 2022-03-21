@@ -15,3 +15,49 @@ Co 库简单实现。
 generator polyfill 简单实现。
 
 async babel 分析。
+
+[async 是如何被 JavaScript 实现的](https://juejin.cn/post/7069317318332907550)
+
+## vue
+
+vue 源码简单实现。
+
+- Reactive 双向数据绑定 ing。
+
+## events
+
+Node 中的核心 events 发布定于模式。
+
+## esm-cjs
+
+简单总结下使用区别，深层等待文章总计。
+
+## require
+
+nodejs require 模块加载核心原理讲述。
+
+## stream
+
+流相关内容，没写完。
+
+## debounce-throttle
+
+节流防抖实现。
+
+## koa
+
+Koa 核心源码。
+
+Koa 核心中间件源码 - bodyParser / file / static 有空儿在写。
+
+## express
+
+express 源码解读， ing 写了一半。
+
+## leetCode
+
+常见算法、数据结构题目，包含测试用例覆盖。
+
+## 网络协议目录
+
+待梳理..
