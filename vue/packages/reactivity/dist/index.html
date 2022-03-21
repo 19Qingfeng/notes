@@ -21,7 +21,8 @@
     // reactive响应式： 将数据变化成为reactive
     const obj = {
       name: '19Qingfeng',
-      age: '23'
+      age: '23',
+      address: 'xian'
     }
     const reactiveData = reactive(obj)
 
@@ -37,8 +38,14 @@
 
     // Effect 会首次直接调用下，之后在依赖的响应式数据变化后它会产生变化
     effect(() => {
-      // effect执行时会进行依赖收集
-      app.innerHTML = `name:${reactiveData.name}.age:${reactiveData.age};`
+      // 2.1 嵌套Effect情况处理
+      effect(() => {
+        // effect执行时会进行依赖收集
+        app.innerHTML = `name:${reactiveData.name}.age:${reactiveData.age};`
+      })
+      // 这里如果单纯的将当前Effect挂载在全局的话 这里就会出问题 
+      // 这里应该是第二个Effect 但是这样的话就收集不到依赖了
+      app.innerHTML = `name:${reactiveData.name}.age:${reactiveData.age};address:${reactiveData.address}`
     })
 
     setTimeout(() => {

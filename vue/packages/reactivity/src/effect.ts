@@ -10,9 +10,12 @@ class ReactiveEffect {
   private fn: Function;
   // 表示effect是否激活状态
   private active: boolean;
+  // 用户记录嵌套Effect清空 （Vue3.0版本是栈记录 后来改成类似于节点 更加提高性能）
+  private parent?: Function;
   constructor(fn) {
     this.fn = fn;
     this.active = true;
+    this.parent = undefined;
   }
 
   run() {
@@ -23,18 +26,21 @@ class ReactiveEffect {
     }
 
     try {
+      // ? 2.1 解决嵌套Effect问题
+      // 记录当前挂载在全局的Effect
+      this.parent = activeEffect;
+      activeEffect = this;
       // 当执行Effect时候优先进行依赖收集
       // 这里的核心思路还有当前 Effect 执行时候，会调用run调用传入的函数
       // 同时将当前effect实例挂在全局变量上
       // *将当前正在执行的Effect关联在全局用于和响应式数据的收集
-      activeEffect = this;
       // 此时当函数执行时内部如果有依赖的响应式数据
       // 那么会触发响应式数据的 Getter 此时Getter中会进行依赖收集
       // 会关联当前全局的Effect和触发Getter的响应式数据
       return this.fn();
     } finally {
-      // 当前对应的Effect函数执行完毕后将Effect重置为空
-      activeEffect = undefined;
+      // 每次Effect run 结束后会还原嵌套的Effect
+      activeEffect = this.parent;
     }
   }
 }

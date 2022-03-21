@@ -30,16 +30,18 @@ var VueReactivity = (() => {
     constructor(fn) {
       this.fn = fn;
       this.active = true;
+      this.parent = void 0;
     }
     run() {
       if (!this.active) {
         this.fn();
       }
       try {
+        this.parent = activeEffect;
         activeEffect = this;
         return this.fn();
       } finally {
-        activeEffect = void 0;
+        activeEffect = this.parent;
       }
     }
   };
