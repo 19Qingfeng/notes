@@ -38,9 +38,9 @@ export class ReactiveEffect {
 
   run() {
     // 当前非激活状态下 直接执行Effect中的fn即可
-    // 无需对于Effect中进行依赖收集
+    // 无需对于Effect中的响应式数据进行依赖收集
     if (!this.active) {
-      this.fn();
+      return this.fn();
     }
 
     try {

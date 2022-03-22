@@ -42,18 +42,20 @@ class ComputedRefImpl {
   public _dirty = true;
   // computed中缓存的值
   private _value;
-  // 记录computed当前依赖的Effect
+  // 依赖于这个computed的Effect
   public _deps = new Set();
 
   constructor(getter, public setter) {
-    // *将computed中的getter创建一个新的effect
-    // *当computed getter执行时
+    // *调用computed()时内部该computed会对应一个effect
+    // *当computed getter执行时 会利用该内部的effect收集对应的响应式数据
     this.effect = new ReactiveEffect(getter, {
       scheduler: () => {
-        //*  当前computed对应的effect依赖的值发生变化时 传入scheduler会触发调度器
+        //*  当前computed对应的effect依赖的响应式数据发生变化时，因为传入了scheduler。所以会执行传入的scheduler
         if (!this._dirty) {
+          // 更改当前computed的状态 _dirty为true 表示需要
           this._dirty = true;
-          // *更新的时候让依赖当前computed依赖的effect全部进行一次run
+          // *同时当computed依赖的值发生了变化，那么此时需要通知依赖于当前computed的effect，进行触发更新（重新执行对应effect）
+          // *重新执行effect时，又回触发computed的getter 重新计算computed
           triggerEffects(this._deps);
         }
       },
@@ -61,20 +63,20 @@ class ComputedRefImpl {
   }
 
   get value() {
-    // 同时当前computed还得收集它和对应当前effect的关系
-    // 当前computed的值发生改变时（比如computed依赖的响应式值发生了改变，此时会触发当前computed的effect的scheduler执行）
-    // *计算属性也需要收集依赖
-
-    //  当前计算属性对应的是 activeEffect
+    // *收集当前computed依赖的effect 比如如果哪个Effect中使用了该computed
+    // *那么此时该effect会被记录在computed的_deps中
+    // !注意trackEffect同样可以记录effect对应的computed中的依赖 可以增加this._deps._is_computed = '看看'; 调试看看
     trackEffect(this._deps);
 
+    // 是否是脏的 如果是脏的则需要重新计算computed的值
     if (this._dirty) {
-      // 不脏 不用重新计算computed的值
       this._dirty = false;
-      // 说明需要重新执行的脏值
+      // *重新计算当前computed中对应的effect函数，也就是调用getter函数获得getter函数的返回值赋值给 this.value
+      // *需要注意的是同时当this.effect.run()时，会重新收集依赖。关联当前computed对应的effect和computed内部依赖的响应式数据
       this._value = this.effect.run();
     }
 
+    // 不脏 不用重新计算computed的值 直接返回内部的返回值
     return this._value;
   }
 

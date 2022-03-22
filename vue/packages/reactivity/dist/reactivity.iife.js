@@ -44,7 +44,7 @@ var VueReactivity = (() => {
     }
     run() {
       if (!this.active) {
-        this.fn();
+        return this.fn();
       }
       try {
         this.parent = activeEffect;

@@ -1,0 +1,63 @@
+<!-- <!DOCTYPE html> -->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>computed</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <!-- <script src="../../../node_modules/@vue/reactivity/dist/reactivity.global.js"></script> -->
+  <script src="./reactivity.iife.js"></script>
+  <!-- TODO: 整理computed逻辑，稍微有些绕 不过写的真nice -->
+  <script>
+    const {
+      reactive,
+      effect,
+      computed
+    } = VueReactivity
+
+    const reactiveObj = reactive({
+      name: 'name'
+    })
+
+    const reactiveObj2 = reactive({
+      flat: true
+    })
+
+    const computedData = computed({
+      get() {
+        console.log('触发getter')
+        // console.log('getter handler')
+        return reactiveObj.name
+      },
+      set(value) {
+        reactiveObj.name = value
+      }
+    })
+
+    effect(() => {
+      console.log('仍然会执行')
+      app.innerHTML = reactiveObj2.flat ? `value:${computedData.value}` : ''
+    })
+
+    // 清空当前effect所有依赖 从新开始收集依赖 同样会清理computed相关的依赖 重新收集
+    reactiveObj2.flat = false
+
+    setTimeout(() => {
+      console.log('timer开始')
+      reactiveObj.name = '9999'
+    }, 1000)
+
+    // setTimeout(() => {
+    //   console.log('timer')
+    //   computedData.value = '19Qingfeng'
+    //   console.log(computedData, 'data')
+    // }, 1000)
+  </script>
+</body>
+
+</html>
