@@ -26,6 +26,13 @@ var VueReactivity = (() => {
 
   // packages/reactivity/src/effect.ts
   var activeEffect;
+  function effect(fn) {
+    const _effect = new ReactiveEffect(fn);
+    _effect.run();
+    const runner = _effect.run.bind(_effect);
+    runner.effect = _effect;
+    return runner;
+  }
   var ReactiveEffect = class {
     constructor(fn) {
       this.deps = [];
@@ -46,11 +53,11 @@ var VueReactivity = (() => {
         activeEffect = this.parent;
       }
     }
+    stop() {
+      this.active = false;
+      clearEffect(this);
+    }
   };
-  function effect(fn) {
-    const _effect = new ReactiveEffect(fn);
-    _effect.run();
-  }
   var targetMap = /* @__PURE__ */ new WeakMap();
   function track(target, type, key) {
     if (!activeEffect) {

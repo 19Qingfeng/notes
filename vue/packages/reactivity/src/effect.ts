@@ -3,6 +3,19 @@
 // !ESModule中导出的引用 会随着模块内部值变化而更改导出值
 let activeEffect;
 
+function effect(fn) {
+  // 调用Effect创建一个响应式的Effect 它会返回一个响应式的React
+  const _effect = new ReactiveEffect(fn);
+
+  // 调用Effect时Effect内部的函数会默认先执行一次
+  _effect.run();
+
+  const runner = _effect.run.bind(_effect);
+  runner.effect = _effect;
+
+  return runner;
+}
+
 /**
  * Reactive Effect
  */
@@ -48,14 +61,15 @@ class ReactiveEffect {
       activeEffect = this.parent;
     }
   }
-}
 
-function effect(fn) {
-  // 调用Effect创建一个响应式的Effect 它会返回一个响应式的React
-  const _effect = new ReactiveEffect(fn);
-
-  // 调用Effect时Effect内部的函数会默认先执行一次
-  _effect.run();
+  stop() {
+    // 修改激活状态
+    this.active = false;
+    // 清空当前Effect中所有关联的数据
+    // * 当调用stop时，清空有关该Effect的所有响应式属性关联
+    // * 换句话说即使数据改变，targetMap 中也关联到当前effect了
+    clearEffect(this);
+  }
 }
 
 // *用于存储响应式数据和Effect的关系Hash表
