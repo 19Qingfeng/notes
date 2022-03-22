@@ -20,6 +20,7 @@ var VueReactivity = (() => {
   // packages/reactivity/src/index.ts
   var src_exports = {};
   __export(src_exports, {
+    computed: () => computed,
     effect: () => effect,
     reactive: () => reactive
   });
@@ -72,7 +73,10 @@ var VueReactivity = (() => {
     if (!deps) {
       depsMap.set(key, deps = /* @__PURE__ */ new Set());
     }
-    const shouldTrack = !deps.has(activeEffect);
+    trackEffect(deps);
+  }
+  function trackEffect(deps) {
+    const shouldTrack = !deps.has(activeEffect) && activeEffect;
     if (shouldTrack) {
       deps.add(activeEffect);
       activeEffect.deps.push(deps);
@@ -87,6 +91,9 @@ var VueReactivity = (() => {
     if (!effects) {
       return;
     }
+    triggerEffects(effects);
+  }
+  function triggerEffects(effects) {
     effects = new Set(effects);
     effects.forEach((effect2) => {
       if (activeEffect !== effect2) {
@@ -110,6 +117,10 @@ var VueReactivity = (() => {
   function isPlainObj(value) {
     return typeof value === "object" && value !== null;
   }
+  function isFunction(value) {
+    return typeof value === "function";
+  }
+  var isArray = Array.isArray;
 
   // packages/reactivity/src/baseHandler.ts
   var mutableHandlers = {
@@ -150,6 +161,49 @@ var VueReactivity = (() => {
     const proxy = new Proxy(obj, mutableHandlers);
     reactiveMap.set(obj, proxy);
     return proxy;
+  };
+
+  // packages/reactivity/src/computed.ts
+  function computed(getterOrOptions) {
+    let getter;
+    let setter;
+    if (isFunction(getterOrOptions)) {
+      getter = getterOrOptions;
+      setter = () => {
+        if (true) {
+          console.warn("computed no setter.");
+        }
+      };
+    }
+    getter = getterOrOptions.get;
+    setter = getterOrOptions.set;
+    return new ComputedRefImpl(getter, setter);
+  }
+  var ComputedRefImpl = class {
+    constructor(getter, setter) {
+      this.setter = setter;
+      this._dirty = true;
+      this._deps = /* @__PURE__ */ new Set();
+      this.effect = new ReactiveEffect(getter, {
+        scheduler: () => {
+          if (!this._dirty) {
+            this._dirty = true;
+            triggerEffects(this._deps);
+          }
+        }
+      });
+    }
+    get value() {
+      trackEffect(this._deps);
+      if (this._dirty) {
+        this._dirty = false;
+        this._value = this.effect.run();
+      }
+      return this._value;
+    }
+    set value(value) {
+      this.setter(value);
+    }
   };
   return __toCommonJS(src_exports);
 })();

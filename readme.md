@@ -24,7 +24,7 @@ vue 源码简单实现。
 
 - Reactive 双向数据绑定。
 
-* Computed 基础原理 ing
+* Computed 基础原理。
 
 ## events
 

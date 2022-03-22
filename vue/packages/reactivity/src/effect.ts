@@ -19,7 +19,7 @@ function effect(fn, options?: { scheduler: Function }) {
 /**
  * Reactive Effect
  */
-class ReactiveEffect {
+export class ReactiveEffect {
   private fn: Function;
   // 表示effect是否激活状态
   private active: boolean;
@@ -102,18 +102,7 @@ function track(target, type, key) {
     depsMap.set(key, (deps = new Set()));
   }
 
-  // 其实Set本身可以去重 这里判断下会性能优化点
-  const shouldTrack = !deps.has(activeEffect);
-
-  if (shouldTrack) {
-    // *收集依赖，将 effect 进入对应WeakMap中对应的target中对应的keys
-    deps.add(activeEffect);
-    // *当然还需要一个反向记录 应该让当前effect也记录它被哪些属性收集后
-    // *这样做的意思是为了清理相关的Effect和依赖
-    // *在当前Effect中记录
-    // *注意；在当前依赖的Effect中deps属性会加入当前依赖属性对应的deps 其实总而言之就是以后会解绑有关当前effect中和所有有关系的响应式属性
-    activeEffect.deps.push(deps);
-  }
+  trackEffect(deps);
 
   /**
    * 比如这样一段代码
@@ -127,6 +116,21 @@ function track(target, type, key) {
    * 所以当a.flag依赖改变时，触发重新执行effect的函数时，需要清空本次effect收集的依赖 从而进行重新收集依赖
    *
    */
+}
+
+export function trackEffect(deps) {
+  // 其实Set本身可以去重 这里判断下会性能优化点
+  const shouldTrack = !deps.has(activeEffect) && activeEffect;
+
+  if (shouldTrack) {
+    // *收集依赖，将 effect 进入对应WeakMap中对应的target中对应的keys
+    deps.add(activeEffect);
+    // *当然还需要一个反向记录 应该让当前effect也记录它被哪些属性收集后
+    // *这样做的意思是为了清理相关的Effect和依赖
+    // *在当前Effect中记录
+    // *注意；在当前依赖的Effect中deps属性会加入当前依赖属性对应的deps 其实总而言之就是以后会解绑有关当前effect中和所有有关系的响应式属性
+    activeEffect.deps.push(deps);
+  }
 }
 
 /**
@@ -148,6 +152,11 @@ function trigger(target, type, key, value, oldValue) {
   if (!effects) {
     return;
   }
+
+  triggerEffects(effects);
+}
+
+export function triggerEffects(effects) {
   // !注意Set的关联引用问题 如果利用同一个引入deps进行循环
   // !首先dep.run()时会进行清空依赖相当于在当前deps中干掉effect
   // !之后清空相关依赖之后，又回在此调用effect.fn()相当于在此进行依赖收集 再次在deps中添加对应的effect 会造成死循环
