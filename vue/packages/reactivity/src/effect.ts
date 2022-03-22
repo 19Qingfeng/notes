@@ -3,9 +3,9 @@
 // !ESModule中导出的引用 会随着模块内部值变化而更改导出值
 let activeEffect;
 
-function effect(fn) {
+function effect(fn, options?: { scheduler: Function }) {
   // 调用Effect创建一个响应式的Effect 它会返回一个响应式的React
-  const _effect = new ReactiveEffect(fn);
+  const _effect = new ReactiveEffect(fn, options);
 
   // 调用Effect时Effect内部的函数会默认先执行一次
   _effect.run();
@@ -27,10 +27,13 @@ class ReactiveEffect {
   private parent?: Function;
   // 用于记录当前Effect中依赖的所有属性对应的Set effect 用于每次更新时清空对应属性存储的这个effect
   public deps = [];
-  constructor(fn) {
+  // 任务调度器
+  public scheduler;
+  constructor(fn, options) {
     this.fn = fn;
     this.active = true;
     this.parent = undefined;
+    this.scheduler = options?.scheduler;
   }
 
   run() {
@@ -150,10 +153,16 @@ function trigger(target, type, key, value, oldValue) {
   // !之后清空相关依赖之后，又回在此调用effect.fn()相当于在此进行依赖收集 再次在deps中添加对应的effect 会造成死循环
   // !本质上还是Set 删除在添加会卡死而数组forEach不会 数组ForEach时会做一个简单的拷贝 而set不会
   effects = new Set(effects);
-  effects.forEach((dep) => {
+  effects.forEach((effect) => {
     // *解决3.2 Effect中继续触发setter递归一直调用effect，此时仅仅会执行一次effect
-    if (activeEffect !== dep) {
-      dep.run();
+    if (activeEffect !== effect) {
+      if (effect.scheduler) {
+        // 如果effect中传入了scheduler数据变化时会触发scheduler而不会直接重新执行effect.run
+        effect.scheduler();
+      } else {
+        // 否则默认数据变化重新调用effect.run()重新执行清空当前Effect依赖重新执行Effect中fn进行重新收集依赖以及视图更新
+        effect.run();
+      }
     }
   });
 }

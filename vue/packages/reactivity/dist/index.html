@@ -82,6 +82,33 @@
 
     // gist: effect 的stop停止和手动执行
     // {effectScope} https://vuejs.org/api/reactivity-advanced.html#effectscope
+    // const obj = {
+    //   flag: true,
+    //   name: '19Qingfeng',
+    //   age: '23',
+    //   address: 'xian'
+    // }
+    // const reactiveData = reactive(obj)
+
+    // const runner = effect(() => {
+    //   app.innerHTML = reactiveData.name
+    // })
+
+    // console.log(runner.effect, 'effect')
+
+    // setTimeout(() => {
+    //   // 终止当前Effect和依赖收集的变量 总之也就是关闭响应式
+    //   runner.effect.stop()
+    //   console.log('runner')
+    //   obj.name = 'wang.haoyu'
+    //   setTimeout(() => {
+    //     alert('注意要手动更新了啊')
+    //     // 手动调用执行effect
+    //     runner()
+    //   }, 1000)
+    // }, 1000)
+
+    // gist: effect 中的 scheduler 手动调度任务执行
     const obj = {
       flag: true,
       name: '19Qingfeng',
@@ -92,21 +119,39 @@
 
     const runner = effect(() => {
       app.innerHTML = reactiveData.name
+    }, {
+      scheduler() {
+        console.log('runner')
+        runner()
+      }
     })
 
-    console.log(runner.effect, 'effect')
+    // 基于scheduler 可以模拟简单的批量异步更新策略 比如:
+    // let waiting = false
+    // const runner = effect(() => {
+    //   console.log('执行')
+    //   app.innerHTML = reactiveData.name
+    // }, {
+    //   scheduler() {
+    //     if (!waiting) {
+    //       waiting = true
+    //       setTimeout(() => {
+    //         // 手动执行effect
+    //         runner()
+    //         waiting = false
+    //       })
+    //     }
+
+    //   }
+    // })
 
     setTimeout(() => {
-      // 终止当前Effect和依赖收集的变量 总之也就是关闭响应式
-      runner.effect.stop()
-      console.log('runner')
-      obj.name = 'wang.haoyu'
-      setTimeout(() => {
-        alert('注意要手动更新了啊')
-        // 手动调用执行effect
-        runner()
-      }, 1000)
-    }, 1000)
+      reactiveData.name = '1'
+      reactiveData.name = '2'
+      reactiveData.name = '3'
+      reactiveData.name = '4'
+      reactiveData.name = '5'
+    }, 1000);
   </script>
 </body>
 
