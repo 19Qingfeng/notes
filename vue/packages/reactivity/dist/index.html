@@ -109,22 +109,22 @@
     // }, 1000)
 
     // gist: effect 中的 scheduler 手动调度任务执行
-    const obj = {
-      flag: true,
-      name: '19Qingfeng',
-      age: '23',
-      address: 'xian'
-    }
-    const reactiveData = reactive(obj)
+    // const obj = {
+    //   flag: true,
+    //   name: '19Qingfeng',
+    //   age: '23',
+    //   address: 'xian'
+    // }
+    // const reactiveData = reactive(obj)
 
-    const runner = effect(() => {
-      app.innerHTML = reactiveData.name
-    }, {
-      scheduler() {
-        console.log('runner')
-        runner()
-      }
-    })
+    // const runner = effect(() => {
+    //   app.innerHTML = reactiveData.name
+    // }, {
+    //   scheduler() {
+    //     console.log('runner')
+    //     runner()
+    //   }
+    // })
 
     // 基于scheduler 可以模拟简单的批量异步更新策略 比如:
     // let waiting = false
@@ -145,13 +145,30 @@
     //   }
     // })
 
+    // setTimeout(() => {
+    //   reactiveData.name = '1'
+    //   reactiveData.name = '2'
+    //   reactiveData.name = '3'
+    //   reactiveData.name = '4'
+    //   reactiveData.name = '5'
+    // }, 1000);
+
+    // gist: 递归reactive
+    const obj = {
+      inner: {
+        name: 'wang.haoyu',
+        age: 13
+      }
+    }
+    const reactiveData = reactive(obj)
+
+    const runner = effect(() => {
+      app.innerHTML = reactiveData.inner.name || reactiveData.inner
+    })
+
     setTimeout(() => {
-      reactiveData.name = '1'
-      reactiveData.name = '2'
-      reactiveData.name = '3'
-      reactiveData.name = '4'
-      reactiveData.name = '5'
-    }, 1000);
+      reactiveData.inner.name = '3'
+    }, 500)
   </script>
 </body>
 
