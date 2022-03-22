@@ -32,6 +32,9 @@ class ReactiveEffect {
       // 记录当前挂载在全局的Effect
       this.parent = activeEffect;
       activeEffect = this;
+
+      // *每次执行前清理当前Effect对应的依赖收集
+      clearEffect(this);
       // 当执行Effect时候优先进行依赖收集
       // 这里的核心思路还有当前 Effect 执行时候，会调用run调用传入的函数
       // 同时将当前effect实例挂在全局变量上
@@ -124,16 +127,37 @@ function trigger(target, type, key, value, oldValue) {
   if (!depsMap) {
     return;
   }
-  const deps = depsMap.get(key);
-  if (!deps) {
+  let effects = depsMap.get(key);
+  if (!effects) {
     return;
   }
-  deps.forEach((dep) => {
+  // !注意Set的关联引用问题 如果利用同一个引入deps进行循环
+  // !首先dep.run()时会进行清空依赖相当于在当前deps中干掉effect
+  // !之后清空相关依赖之后，又回在此调用effect.fn()相当于在此进行依赖收集 再次在deps中添加对应的effect 会造成死循环
+  // !本质上还是Set 删除在添加会卡死而数组forEach不会 数组ForEach时会做一个简单的拷贝 而set不会
+  effects = new Set(effects);
+  effects.forEach((dep) => {
     // *解决3.2 Effect中继续触发setter递归一直调用effect，此时仅仅会执行一次effect
     if (activeEffect !== dep) {
       dep.run();
     }
   });
+}
+
+/**
+ * 清理Effect相关的依赖收集内容
+ * 每次重新执行Effect时应先清理当前Effect对应的依赖收集，同时重新收集依赖收集
+ * @param effect
+ */
+function clearEffect(effect) {
+  const { deps } = effect;
+  // !注意进入这里外层由于trigger函数会自身forEach deps
+  deps.forEach((dep) => {
+    // 清空每一个dep中有关当前effect的
+    dep.delete(effect);
+  });
+  // 同时清空当前Effect的deps属性依赖 等待下次依赖收集关联
+  deps.length = 0;
 }
 
 export { effect, track, trigger, activeEffect };

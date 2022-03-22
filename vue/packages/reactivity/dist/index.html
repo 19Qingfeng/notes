@@ -10,6 +10,7 @@
 
 <body>
   <div id="app"></div>
+  <div id="app2"></div>
   <!-- <script src="../../../node_modules/@vue/reactivity/dist/reactivity.global.js"></script> -->
   <script src="./reactivity.iife.js"></script>
   <script>
@@ -20,6 +21,7 @@
     // Effect副作用函数： Effect中依赖的响应式数据发生变化Effect会重新执行
     // reactive响应式： 将数据变化成为reactive
     const obj = {
+      flag: true,
       name: '19Qingfeng',
       age: '23',
       address: 'xian'
@@ -37,24 +39,46 @@
     // console.log(reactiveData1, 'reactiveData1')
 
     // Effect 会首次直接调用下，之后在依赖的响应式数据变化后它会产生变化
-    // effect(() => {
-    // 2.1 嵌套Effect情况处理
     effect(() => {
-      // 3.2 Effect中无限触发setter 造成递归会无限循环
-      reactiveData.name = Math.random()
-      console.log('re')
-      // effect执行时会进行依赖收集
-      app.innerHTML = `name:${reactiveData.name}.age:${reactiveData.age};`
+      // 2.1 嵌套Effect情况处理
+      // effect(() => {
+      //   // 3.2 Effect中无限触发setter 造成递归会无限循环
+      //   // reactiveData.name = Math.random()
+      //   app.innerHTML = `name:${reactiveData.name}.age:${reactiveData.age};`
+      //   effect(() => {
+      //     console.log('执行一次')
+      //     app2.innerHTML = `name:${reactiveData.address};`
+      //   })
+      // })
+      // 这里如果单纯的将当前Effect挂载在全局的话 这里就会出问题 
+      // 这里应该是第二个Effect 但是这样的话就收集不到依赖了
+      app.innerHTML = reactiveData.flag ? reactiveData.name : reactiveData.age
+      console.log('render 执行')
     })
-    // 这里如果单纯的将当前Effect挂载在全局的话 这里就会出问题 
-    // 这里应该是第二个Effect 但是这样的话就收集不到依赖了
-    //   app.innerHTML = `name:${reactiveData.name}.age:${reactiveData.age};address:${reactiveData.address}`
-    // })
 
-    // setTimeout(() => {
-    //   console.log('timer执行')
-    //   reactiveData.name = 'wang.haoyu'
-    // }, 1000);
+    // gist: 解决标记，每次effect执行时重新清空之前相关依赖并且重新收集
+    // const obj = {
+    //   flag: true,
+    //   name: '19Qingfeng',
+    //   age: '23',
+    //   address: 'xian'
+    // }
+    // const reactiveData = reactive(obj)
+    effect(() => {
+      app.innerHTML = reactiveData.flag ? reactiveData.name : reactiveData.age
+      console.log('render 执行')
+    })
+
+    setTimeout(() => {
+      reactiveData.flag = false
+      console.log('timer 1 over')
+    }, 1000);
+
+    setTimeout(() => {
+      // 修改name 并不会 rerender
+      reactiveData.name = 'wanghaoyu'
+      console.log('timer 2 over')
+    }, 2000);
   </script>
 </body>
 

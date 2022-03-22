@@ -40,6 +40,7 @@ var VueReactivity = (() => {
       try {
         this.parent = activeEffect;
         activeEffect = this;
+        clearEffect(this);
         return this.fn();
       } finally {
         activeEffect = this.parent;
@@ -74,15 +75,23 @@ var VueReactivity = (() => {
     if (!depsMap) {
       return;
     }
-    const deps = depsMap.get(key);
-    if (!deps) {
+    let effects = depsMap.get(key);
+    if (!effects) {
       return;
     }
-    deps.forEach((dep) => {
+    effects = new Set(effects);
+    effects.forEach((dep) => {
       if (activeEffect !== dep) {
         dep.run();
       }
     });
+  }
+  function clearEffect(effect2) {
+    const { deps } = effect2;
+    deps.forEach((dep) => {
+      dep.delete(effect2);
+    });
+    deps.length = 0;
   }
 
   // packages/share/src/index.ts
