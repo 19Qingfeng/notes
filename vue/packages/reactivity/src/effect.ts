@@ -5,7 +5,7 @@ let activeEffect;
 
 function effect(fn, options?: { scheduler: Function }) {
   // 调用Effect创建一个响应式的Effect 它会返回一个响应式的React
-  const _effect = new ReactiveEffect(fn, options);
+  const _effect = new ReactiveEffect(fn, options?.scheduler);
 
   // 调用Effect时Effect内部的函数会默认先执行一次
   _effect.run();
@@ -29,11 +29,11 @@ export class ReactiveEffect {
   public deps = [];
   // 任务调度器
   public scheduler;
-  constructor(fn, options) {
+  constructor(fn, scheduler) {
     this.fn = fn;
     this.active = true;
     this.parent = undefined;
-    this.scheduler = options?.scheduler;
+    this.scheduler = scheduler;
   }
 
   run() {

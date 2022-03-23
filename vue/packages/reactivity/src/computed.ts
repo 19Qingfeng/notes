@@ -48,17 +48,15 @@ class ComputedRefImpl {
   constructor(getter, public setter) {
     // *调用computed()时内部该computed会对应一个effect
     // *当computed getter执行时 会利用该内部的effect收集对应的响应式数据
-    this.effect = new ReactiveEffect(getter, {
-      scheduler: () => {
-        //*  当前computed对应的effect依赖的响应式数据发生变化时，因为传入了scheduler。所以会执行传入的scheduler
-        if (!this._dirty) {
-          // 更改当前computed的状态 _dirty为true 表示需要
-          this._dirty = true;
-          // *同时当computed依赖的值发生了变化，那么此时需要通知依赖于当前computed的effect，进行触发更新（重新执行对应effect）
-          // *重新执行effect时，又回触发computed的getter 重新计算computed
-          triggerEffects(this._deps);
-        }
-      },
+    this.effect = new ReactiveEffect(getter, () => {
+      //*  当前computed对应的effect依赖的响应式数据发生变化时，因为传入了scheduler。所以会执行传入的scheduler
+      if (!this._dirty) {
+        // 更改当前computed的状态 _dirty为true 表示需要
+        this._dirty = true;
+        // *同时当computed依赖的值发生了变化，那么此时需要通知依赖于当前computed的effect，进行触发更新（重新执行对应effect）
+        // *重新执行effect时，又回触发computed的getter 重新计算computed
+        triggerEffects(this._deps);
+      }
     });
   }
 

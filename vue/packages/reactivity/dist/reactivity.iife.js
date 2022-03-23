@@ -28,19 +28,19 @@ var VueReactivity = (() => {
   // packages/reactivity/src/effect.ts
   var activeEffect;
   function effect(fn, options) {
-    const _effect = new ReactiveEffect(fn, options);
+    const _effect = new ReactiveEffect(fn, options == null ? void 0 : options.scheduler);
     _effect.run();
     const runner = _effect.run.bind(_effect);
     runner.effect = _effect;
     return runner;
   }
   var ReactiveEffect = class {
-    constructor(fn, options) {
+    constructor(fn, scheduler) {
       this.deps = [];
       this.fn = fn;
       this.active = true;
       this.parent = void 0;
-      this.scheduler = options == null ? void 0 : options.scheduler;
+      this.scheduler = scheduler;
     }
     run() {
       if (!this.active) {
@@ -184,12 +184,10 @@ var VueReactivity = (() => {
       this.setter = setter;
       this._dirty = true;
       this._deps = /* @__PURE__ */ new Set();
-      this.effect = new ReactiveEffect(getter, {
-        scheduler: () => {
-          if (!this._dirty) {
-            this._dirty = true;
-            triggerEffects(this._deps);
-          }
+      this.effect = new ReactiveEffect(getter, () => {
+        if (!this._dirty) {
+          this._dirty = true;
+          triggerEffects(this._deps);
         }
       });
     }
