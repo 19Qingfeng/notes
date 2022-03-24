@@ -12,7 +12,7 @@ import { ReactiveEffect } from './effect';
 export function watch(source, callback) {
   let getter;
   if (isPlainObj(source)) {
-    // ?这里需要进行一次依赖收集
+    // ?这里需要进行一次依赖收集 要触发依赖收集就需要在getter中进行数据的访问 那么我就递归进行数据的访问 这里回头参考源码补充实现逻辑
     getter = () => source;
   }
 
