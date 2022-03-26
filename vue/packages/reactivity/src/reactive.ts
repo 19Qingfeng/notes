@@ -5,6 +5,10 @@ import { mutableHandlers } from './baseHandler';
 // 利用全局对象的形式来保存已经处理为proxy的对象
 const reactiveMap = new WeakMap();
 
+export const isReactive = (target) => {
+  return !!(target && target[ReactiveFlags.IS_REACTIVE]);
+};
+
 const reactive = (obj) => {
   // 传入非对象
   if (!isPlainObj(obj)) {

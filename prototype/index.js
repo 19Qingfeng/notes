@@ -27,3 +27,4 @@ console.log(a.b); // *a.__proto -> A.prototype -> A.prototype,__proto -> Object.
 
 // Object.__proto__ === Function.prototype true
 // Function.prototype.__proto__ === Object.prototype true
+// Function.__proto__ === Function.prototype  true

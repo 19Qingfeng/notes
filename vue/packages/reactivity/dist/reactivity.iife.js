@@ -22,7 +22,8 @@ var VueReactivity = (() => {
   __export(src_exports, {
     computed: () => computed,
     effect: () => effect,
-    reactive: () => reactive
+    reactive: () => reactive,
+    watch: () => watch
   });
 
   // packages/reactivity/src/effect.ts
@@ -147,6 +148,9 @@ var VueReactivity = (() => {
 
   // packages/reactivity/src/reactive.ts
   var reactiveMap = /* @__PURE__ */ new WeakMap();
+  var isReactive = (target) => {
+    return !!(target && target["__v_isReactive" /* IS_REACTIVE */]);
+  };
   var reactive = (obj) => {
     if (!isPlainObj(obj)) {
       return obj;
@@ -203,6 +207,44 @@ var VueReactivity = (() => {
       this.setter(value);
     }
   };
+
+  // packages/reactivity/src/watch.ts
+  function traversal(obj, map = /* @__PURE__ */ new Set()) {
+    if (typeof obj !== "object" || obj === null) {
+      return;
+    }
+    if (map.has(obj)) {
+      return obj;
+    }
+    map.add(obj);
+    for (let key in obj) {
+      traversal(obj[key], map);
+    }
+    return obj;
+  }
+  function watch(source, callback) {
+    let getter;
+    if (isReactive(source)) {
+      getter = () => traversal(source);
+    } else {
+      getter = source;
+    }
+    let oldValue;
+    let clean;
+    const onCleanup = (fn) => {
+      clean = fn;
+    };
+    const job = () => {
+      const newValue = _effect.run();
+      if (clean) {
+        clean();
+      }
+      callback(newValue, oldValue, onCleanup);
+      oldValue = newValue;
+    };
+    const _effect = new ReactiveEffect(getter, job);
+    oldValue = _effect.run();
+  }
   return __toCommonJS(src_exports);
 })();
 //# sourceMappingURL=reactivity.iife.js.map

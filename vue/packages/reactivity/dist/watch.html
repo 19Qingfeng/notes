@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script src="../../../node_modules/vue/dist/vue.global.js"></script>
+  <!-- <script src="./reactivity.iife.js"></script> -->
+  <script>
+    const {
+      reactive,
+      watch
+    } = Vue
+    // VueReactivity
+
+
+    const obj = reactive({
+      name: 'wang.haoyu',
+      age: {
+        first: 1
+      }
+    })
+
+    // case: 1. 直接存放一个对象 深度监听
+    // watch(() => obj.age, function (n, o) {
+    //   console.log(n, o)
+    // })
+
+    // case: 2. 传入一个方法，方法返回对应的对象值，进行监听
+    // watch(() => obj.age, function (n, o) {
+    //   console.log(n, o)
+    // })
+
+    // case: 3. Vue3中watch的callback提供了一个额外的参数cleanUp，本质还是利用闭包的效果来实现
+
+    let i = 2000;
+
+    function getData(timer) {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          resolve(timer)
+        }, timer);
+      })
+    }
+    // 第一次调用watch的时候传入一个回调， 第二次调用watch的时候执行上一次传入的回调
+
+
+    // 1) 第一次调用watch的时候用户注入一个取消的回调
+    // 2) 第二次调用watch的时候会执行第一次用户注入的回调
+    // 3) 第三次调用watch会执行第二次注入的回调
+
+    // 后面的watch触发会将上次watch中的clear 置为true
+    watch(() => obj.name, async (newValue, oldValue, onCleanup) => {
+      let clear = false;
+      // 每次watch的callback函数中，都会传入一个新的fn，赋值给watch内部的clean
+      // 当下次watch执行之前 会调用本次传入的fn
+      // 由于闭包的原因 每次watch执行前都会修改上次watch内部的clear 
+      // 就会导致即使之前的Promise返回了 但是内部变量clear为false 所以并不会执行渲染
+      onCleanup(() => {
+        clear = true;
+      })
+      i -= 1000;
+      let r = await getData(i); // 第一次执行1s后渲染1000， 第二次执行0s后渲染0， 最终应该是0
+      if (!clear) {
+        document.body.innerHTML = r;
+      }
+    }, {
+      flush: 'sync'
+    });
+    obj.name = '1';
+    obj.name = '2';
+
+
+
+    setTimeout(() => {
+      obj.age.first = '19Qingfeng'
+    }, 1000)
+  </script>
+</body>
+
+</html>
