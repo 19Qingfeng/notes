@@ -1,0 +1,56 @@
+<!-- <!DOCTYPE html> -->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>computed</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <!-- <script src="../../../node_modules/@vue/reactivity/dist/reactivity.global.js"></script> -->
+  <script src="./reactivity.iife.js"></script>
+  <script>
+    const {
+      ref,
+      effect,
+    } = VueReactivity
+
+    // case: 1. normal value
+    // const flag = ref(true)
+
+    // effect(() => {
+    //   app.innerHTML = flag.value
+    // })
+
+    // setTimeout(() => {
+    //   flag.value = false
+    // }, 1000)
+
+    // case: 2. object 
+    const arr = ref({
+      a: {
+        toString() {
+          return '1'
+        },
+        b: {
+          c: 3
+        }
+      }
+    })
+
+    // not reactive
+    effect(() => {
+      // 调用toString方法 会内部遍历这些值。
+      app.innerHTML = arr.value.a
+    })
+
+    setTimeout(() => {
+      arr.value.a.b.c = '122'
+    }, 1000)
+  </script>
+</body>
+
+</html>

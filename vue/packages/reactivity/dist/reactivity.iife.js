@@ -23,6 +23,7 @@ var VueReactivity = (() => {
     computed: () => computed,
     effect: () => effect,
     reactive: () => reactive,
+    ref: () => ref,
     watch: () => watch
   });
 
@@ -245,6 +246,33 @@ var VueReactivity = (() => {
     const _effect = new ReactiveEffect(getter, job);
     oldValue = _effect.run();
   }
+
+  // packages/reactivity/src/ref.ts
+  function ref(value) {
+    return new RefImpl(value);
+  }
+  function toReactive(value) {
+    return isPlainObj(value) ? reactive(value) : value;
+  }
+  var RefImpl = class {
+    constructor(rawValue) {
+      this.rawValue = rawValue;
+      this.__v_isRef__ = true;
+      this._deps = /* @__PURE__ */ new Set();
+      this._value = toReactive(rawValue);
+    }
+    get value() {
+      trackEffect(this._deps);
+      return this._value;
+    }
+    set value(newValue) {
+      if (this.rawValue !== newValue) {
+        this._value = toReactive(newValue);
+        this.rawValue = newValue;
+        triggerEffects(this._deps);
+      }
+    }
+  };
   return __toCommonJS(src_exports);
 })();
 //# sourceMappingURL=reactivity.iife.js.map

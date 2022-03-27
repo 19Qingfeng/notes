@@ -144,7 +144,6 @@ export function trackEffect(deps) {
 function trigger(target, type, key, value, oldValue) {
   // 简单来说 每次触发的时 我拿出对应的Effect去执行 就会触发页面更新
   const depsMap = targetMap.get(target);
-
   if (!depsMap) {
     return;
   }

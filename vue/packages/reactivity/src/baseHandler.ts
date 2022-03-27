@@ -17,10 +17,10 @@ export const mutableHandlers = {
     }
 
     // 依赖收集时 一个对象的一个key 可能对应关联多个Effect
+    // 利用引用类型的Object作为key 同时在trigger对比对象是否存在（因为同为相同源对象的引用）
     track(target, 'get', key);
 
     let result = Reflect.get(target, key, receiver);
-
     // 依赖为对象 递归进行reactive处理
     if (isPlainObj(result)) {
       return reactive(result);
