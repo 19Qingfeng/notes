@@ -72,7 +72,6 @@ var rotate = function (nums: number[], k: number) {
   const first = nums.slice(-step);
   const second = nums.slice(0, length - step);
   const result = first.concat(second);
-  console.log(result, 'result');
   for (let i = 0; i < nums.length; i++) {
     nums[i] = result[i];
   }

@@ -17,7 +17,7 @@ const nodes = [
  * @param {*} arr
  * @returns
  */
-function parseArr(arr) {
+function parseArr(nodes) {
   const map = Object.create(null);
   const result = [];
 
