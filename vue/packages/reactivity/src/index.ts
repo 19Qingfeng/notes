@@ -2,6 +2,6 @@ import { effect } from './effect';
 import { reactive } from './reactive';
 import { computed } from './computed';
 import { watch } from './watch';
-import { ref } from './ref';
+import { ref, toRefs } from './ref';
 
-export { effect, reactive, computed, watch, ref };
+export { effect, reactive, computed, watch, ref, toRefs };

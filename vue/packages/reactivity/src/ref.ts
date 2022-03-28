@@ -1,6 +1,34 @@
-import { isPlainObj } from '@vue/share';
+import { isArray, isPlainObj } from '@vue/share';
 import { trackEffect, triggerEffects } from './effect';
 import { reactive } from './reactive';
+
+class ObjectRefImpl {
+  constructor(public object, public key) {}
+
+  // *本质上还是通过代理来触发原本对象上的getter和setter
+  get value() {
+    return this.object[this.key];
+  }
+
+  set value(value) {
+    this.object[this.key] = value;
+  }
+}
+
+// 本质上还是进行了一层劫持
+function toRef(object, key) {
+  return new ObjectRefImpl(object, key);
+}
+
+export function toRefs(object) {
+  const result = isArray(object) ? new Array(object.length) : {};
+
+  for (let key in object) {
+    result[key] = toRef(object, key);
+  }
+
+  return result;
+}
 
 export function ref(value) {
   return new RefImpl(value);
