@@ -190,6 +190,7 @@ var VueReactivity = (() => {
       this.setter = setter;
       this._dirty = true;
       this._deps = /* @__PURE__ */ new Set();
+      this.__v_isRef__ = true;
       this.effect = new ReactiveEffect(getter, () => {
         if (!this._dirty) {
           this._dirty = true;

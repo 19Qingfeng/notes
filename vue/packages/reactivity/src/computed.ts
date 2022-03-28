@@ -44,6 +44,8 @@ class ComputedRefImpl {
   private _value;
   // 依赖于这个computed的Effect
   public _deps = new Set();
+  // 表示是否需要.value进行访问
+  public __v_isRef__ = true;
 
   constructor(getter, public setter) {
     // *调用computed()时内部该computed会对应一个effect

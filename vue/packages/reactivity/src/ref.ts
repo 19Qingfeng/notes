@@ -30,6 +30,29 @@ export function toRefs(object) {
   return result;
 }
 
+// 相当于将Ref在变成Proxy
+export function proxyRefs(object) {
+  // 当访问对象的某个key时候 相当于访问 object中对应属性的value
+  return new Proxy(object, {
+    get(target, key, recevier) {
+      const r = Reflect.get(target, key, recevier);
+      // * 这里进行判断，如果是ref值，那么当触发getter时，会触发原本对象的.value值
+      // 当然非的话直接使用就好了
+      return r.__v_isRef__ ? r.value : r;
+    },
+    set(target, key, value, recevier) {
+      const oldValue = target[key];
+      if (oldValue.__v_isRef__) {
+        // *如果是Ref的话，那么此时劫持修改对应的老值.value
+        oldValue.value = value;
+        return true;
+      } else {
+        return Reflect.set(target, key, value, recevier);
+      }
+    },
+  });
+}
+
 export function ref(value) {
   return new RefImpl(value);
 }

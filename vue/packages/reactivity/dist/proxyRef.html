@@ -1,0 +1,46 @@
+<!-- <!DOCTYPE html> -->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>computed</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script src="../../../node_modules/vue/dist/vue.global.js"></script>
+  <!-- <script src="./reactivity.iife.js"></script> -->
+  <script>
+    const {
+      ref,
+      effect,
+      proxyRefs
+    } = Vue
+
+    const name = ref('wang.haoyu')
+    const age = ref(13)
+
+
+    // proxy 顾名思义将传入一个对象 对象如果存在ref值，那么此时会将当前ref重新变成proxy的形式进行访问（当然内部还是基于劫持进行访问.value 不过用法类似于proxy）
+    // 这是因为后续Vue在模板时会存在上下文，所以只需要使用 name 单纯的就可以，类似于访问 this.value ，我只要将this指向对应的proxyRefValue就可以。
+    const proxyRefValue = proxyRefs({
+      name,
+      age
+    })
+
+    // 模版中使用ref时，并不需要添加.value 对吧
+    // 这是Vue内部自动帮我们处理成为了 proxyRef(ref) 进行了结构
+    // 实际上Vue模版渲染时会将所有的ref包装在一个固定的上下文下，类似于with的效果
+    // 当我们使用name时，它会自动调用 this.name 此时this指向的是 proxyRef 的对象
+    effect(() => {
+      with(proxyRefValue) {
+        app.innerHTML = `name:${name}--age:${age}`
+      }
+
+    })
+  </script>
+</body>
+
+</html>
