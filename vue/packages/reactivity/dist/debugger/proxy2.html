@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script src="../../../../node_modules/vue/dist/vue.global.js"></script>
+  <script>
+    const {
+      reactive,
+      readonly,
+      toRaw,
+      markRaw,
+      effect,
+      ref
+    } = VueReactivity;
+    // const state = reactive({
+    //     name: 'jw'
+    // })
+
+    // // proxy劫持的功能: 
+    // // 1) 触发get，进行依赖收集
+    // /*  debugger
+    //  state.name; */
+
+    // // 2) 处理数组的includes方法等
+    // const data = {
+    //     name: 'jw'
+    // };
+    // const arr = reactive([data]); // reactive 对象中套对象 在取值的时候会进行递归代理
+    // // case: 这里访问arr[0]的时候获取的是代理对象 所以代理对象肯定是不会和源对象相等
+    // // console.log(arr[0] === data);
+    // // debugger
+    // // 从对象上访问了includes属性 会走代理
+
+    // // 这里调用includes 内部会将代理对象转换成原始对象，在进行处理 arr.includes 原始的不行再去调用代理过的
+
+    // // case: 正常情况下不应该n为true，因为这是检查代理对象中是否存在对应的源对象
+    // // 当调用arr.includes 时会触发arr代理对象的getter，会访问它的include / length / 以及对应遍历查找的key 进行触发getter
+    // // case: 所以当触发getter时，如果 arr[0] 仍是一个对象时，使用reactive包裹的getter中会递归处理对象为代理对象
+
+    // // 所以要重写includes方法，保证包含原对象时同样为true
+    // debugger
+
+    // case: 首先 includes/indexOf/lastIndexOf 内部会将响应式包裹的数组转化成为原始的数组，判断是否具有传入的条件
+    // 如果找到则返回 如果未找到
+    // 则会将include/indexOf/lastIndexOf中传入的参数挨个进行toRaw转化为原始类型 在进行判断
+    // 并且返回最终结果
+    // console.log(arr.includes(data));
+
+
+    // 3) 内置symbol的处理 __proto__ 这些不要处理了
+    // debugger
+    // console.log(state[Symbol.iterator]);
+    // console.log(state.__proto__)
+
+
+    // 4) 不支持脱ref的情况
+    // 对应 const shouldUnwrap = !targetIsArray || !isIntegerKey(key)
+    // return shouldUnwrap ? res.value : res
+
+
+    // 对象中的值如果是ref getter 时会自动 脱ref
+    let obj = reactive({
+      name: ref('wang.haoyu')
+    });
+    let n = obj.name
+    /**
+     * 老的是ref 新的不是ref 则会给老的ref赋值
+     * if (!isArray(target) && isRef(oldValue) && !isRef(value)) {
+            oldValue.value = value 
+            return true
+        }
+     */
+    obj.name = 3 // 它会自动的进行修改ref的value 在setter逻辑中
+    console.log(obj, 'onj')
+
+
+    // // 数组则不会
+    // const proxyArr = reactive([ref(1), 2, 3])
+    // // proxyArr[0] = 100 数组则不会支持 直接会修改对应值 而不会修改.value
+    // console.log(proxyArr)
+    // // debugger
+
+    // console.log(proxyArr[0]); // 这种情况不支持脱ref
+  </script>
+</body>
+
+</html>

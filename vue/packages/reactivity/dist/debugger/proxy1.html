@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script src="../../../../node_modules/vue/dist/vue.global.js"></script>
+  <script>
+    const {
+      reactive,
+      readonly,
+      toRaw,
+      markRaw,
+      effect,
+      ref
+    } = VueReactivity;
+    // 1.被readonly代理过的，在被reactive进行代理直接返回readonly的结果。
+    /*  let obj = { name: 'jw' };
+    let proxy1 = readonly(obj);
+    debugger;
+    let proxy2 = reactive(proxy1);
+    console.log(proxy1 === proxy2)
+     */
+    // 2.调试reactive函数,已经被代理过的对象，在次被代理则返回上次代理的结果
+    /* let obj = { name: 'jw' };
+    debugger
+    let proxy1 = reactive(obj);
+    let proxy2 = reactive(proxy1);
+    let proxy3 = reactive(obj); */
+
+    // 3. toRaw方法的使用 / markRaw 标记不被代理
+    let obj = {
+      name: 'jw'
+    };
+    let proxy = reactive(obj); // target -> proxy
+    debugger
+    console.log(obj === toRaw(proxy)); // proxy -> target
+
+    debugger
+    let obj2 = {
+      name: 'jw'
+    }
+    let proxy2 = reactive(markRaw(obj2)); // 标记不可被代理
+    console.log(proxy2);
+  </script>
+</body>
+
+</html>
