@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div>
+    <input type="text" id="input">
+  </div>
+  <script>
+    const myWorker = new Worker("./sw.js");
+
+    input.onchange = () => {
+      const timer = () => {
+        console.log('timer')
+      }
+
+      setTimeout(timer, 0)
+
+      const promiseBack = () => console.log('promise')
+
+      Promise.resolve().then(promiseBack)
+      myWorker.postMessage(['123']);
+    }
+
+
+    // worker相关callback会在本次EventLoop的最后阶段（页面渲染后执行）
+    // 可以单独使用 performance 测试就能看出对应在EventLoop哪个过程了
+    function workLogic() {
+      console.log('getData')
+    }
+    myWorker.onmessage = workLogic
+  </script>
+</body>
+
+</html>

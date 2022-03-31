@@ -18,6 +18,14 @@ async babel 分析。
 
 [async 是如何被 JavaScript 实现的](https://juejin.cn/post/7069317318332907550)
 
+## EventLoop 目录
+
+V8 下 EventLoop ，不要忘记 worker 的 onmessage callback 在 loop 中的位置，详细见对应文件。
+
+NodeJs 下 EventLoop 目录。
+
+[NodeJs 中 EventLoop 与浏览器下的差异性](https://juejin.cn/post/7077122129107353636)
+
 ## vue
 
 vue 源码简单实现。
