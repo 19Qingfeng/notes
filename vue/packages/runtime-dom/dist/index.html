@@ -1,0 +1,55 @@
+<!-- <!DOCTYPE html> -->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>computed</title>
+</head>
+
+<body>
+  <script></script>
+  <div id="app"></div>
+  <script src="../../../node_modules/@vue/runtime-dom/dist/runtime-dom.global.js"></script>
+  <script src="./runtime-dom.iife.js"></script>
+  <script>
+    // 其实VueRuntimeDom 简单来说就是Vue提供给浏览器环境下 虚拟Dom 渲染的一些 DOM API 的操作接口
+    const {
+      nodeOps,
+      // createRenderer,
+      // DOM中的方法默认是使用DOM API提供的借口
+      // render,
+      // h
+    } = VueRuntimeDOM
+
+    // // createRenderer返回一个自定义渲染器Render https://vuejs.org/api/custom-renderer.html#createrenderer 它其实是在RuntimeCore中提供的
+    // // h 创建虚拟节点VDom方法
+    // const renderer = createRenderer({
+    //   // vue/node_modules/@vue/runtime-core/dist/runtime-core.d.ts
+    //   // 创建节点接口
+    //   createElement(element) {
+    //     return document.createElement(element, true)
+    //   },
+    //   setElementText(node, text) {
+    //     node.innerText = text
+    //   },
+    //   insert(el, parent, anchor) {
+    //     parent.appendChild(el)
+    //   },
+    //   patchProp(el, key, prevValue, nextValue) {
+    //     console.log(el, key, prevValue, nextValue)
+    //   }
+    // })
+    // const vnode = h('div', {
+    //   style: {
+    //     color: 'red'
+    //   }
+    // }, '19Qingfeng')
+    // renderer.render(vnode, document.getElementById('app'))
+
+    console.log(nodeOps, 'nodeOps')
+  </script>
+</body>
+
+</html>

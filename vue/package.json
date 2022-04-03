@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev-global": "node ./scripts/dev.js reactivity -f global"
+    "dev-global": "node ./scripts/dev.js runtime-dom -f global"
   },
   "keywords": [],
   "author": "",

@@ -30,9 +30,9 @@ NodeJs 下 EventLoop 目录。
 
 vue 源码简单实现。
 
-- Reactive 双向数据绑定。
+- Reactive 模块: Computed、Watch、Ref 基础原理。
 
-* Computed 基础原理。
+* Runtime-core 模块
 
 ## events
 

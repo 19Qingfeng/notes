@@ -5,7 +5,7 @@ const argv = require('minimist')(process.argv.slice(2));
 const target = argv['_'];
 const format = argv['f'];
 
-const pkg = require(resolve(__dirname, '../packages/reactivity/package.json'));
+const pkg = require(resolve(__dirname, `../packages/${target}/package.json`));
 
 const outputFormat = format.startsWith('global')
   ? 'iife'
