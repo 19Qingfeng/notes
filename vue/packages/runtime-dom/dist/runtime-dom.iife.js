@@ -57,11 +57,47 @@ var VueRuntimeDom = (() => {
     }
   };
 
+  // packages/runtime-dom/src/modules/attr.ts
+  function patchAttr() {
+  }
+
+  // packages/runtime-dom/src/modules/class.ts
+  function patchClass(el, nextValue) {
+    if (nextValue === null) {
+      el.removeAttribute("class");
+    } else {
+      el.className = nextValue;
+    }
+  }
+
+  // packages/runtime-dom/src/modules/event.ts
+  function patchEvent(el, eventName, nextValue) {
+  }
+
+  // packages/runtime-dom/src/modules/style.ts
+  function patchStyle(el, prevValue, nextValue) {
+    for (let prop in nextValue) {
+      el["style"][prop] = nextValue[prop];
+    }
+    if (prevValue) {
+      for (let key in prevValue) {
+        if (!nextValue[key]) {
+          el["style"][key] = null;
+        }
+      }
+    }
+  }
+
   // packages/runtime-dom/src/patchProps.ts
   function patchProps(el, key, preValue, nextValue) {
     if (key === "class") {
-    }
-    if (key == "style") {
+      patchClass(el, nextValue);
+    } else if (key === "style") {
+      patchStyle(el, preValue, nextValue);
+    } else if (/^on[^a-z]/.test(key)) {
+      patchEvent(el, key, nextValue);
+    } else {
+      patchAttr();
     }
   }
 
