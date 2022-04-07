@@ -58,7 +58,12 @@ var VueRuntimeDom = (() => {
   };
 
   // packages/runtime-dom/src/modules/attr.ts
-  function patchAttr() {
+  function patchAttr(el, key, value) {
+    if (value) {
+      el.setAttribute(key, value);
+    } else {
+      el.removeAttribute(key);
+    }
   }
 
   // packages/runtime-dom/src/modules/class.ts
@@ -71,7 +76,26 @@ var VueRuntimeDom = (() => {
   }
 
   // packages/runtime-dom/src/modules/event.ts
+  function createInvoker(fn) {
+    const invoker = (e) => invoker.value(e);
+    invoker.value = fn;
+    return invoker;
+  }
   function patchEvent(el, eventName, nextValue) {
+    const invokers = el._vei ? el._vei : el._vel = {};
+    const exits = invokers[eventName];
+    if (exits) {
+      exits.value = nextValue;
+    } else {
+      const name = eventName.slice(2).toLowerCase();
+      if (nextValue) {
+        const invoker = invokers[eventName] = createInvoker(nextValue);
+        el.addEventListener(name, invoker);
+      } else {
+        el.removeEventListener(name, exits);
+        invokers[eventName] = void 0;
+      }
+    }
   }
 
   // packages/runtime-dom/src/modules/style.ts
@@ -97,7 +121,7 @@ var VueRuntimeDom = (() => {
     } else if (/^on[^a-z]/.test(key)) {
       patchEvent(el, key, nextValue);
     } else {
-      patchAttr();
+      patchAttr(el, key, nextValue);
     }
   }
 

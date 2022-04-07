@@ -11,6 +11,6 @@ export function patchProps(el, key, preValue, nextValue) {
   } else if (/^on[^a-z]/.test(key)) {
     patchEvent(el, key, nextValue);
   } else {
-    patchAttr();
+    patchAttr(el, key, nextValue);
   }
 }
