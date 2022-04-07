@@ -12,15 +12,15 @@
   <script></script>
   <div id="app"></div>
   <script src="../../../node_modules/@vue/runtime-dom/dist/runtime-dom.global.js"></script>
-  <script src="./runtime-dom.iife.js"></script>
+  <!-- <script src="./runtime-dom.iife.js"></script> -->
   <script>
     // 其实VueRuntimeDom 简单来说就是Vue提供给浏览器环境下 虚拟Dom 渲染的一些 DOM API 的操作接口
     const {
-      nodeOps,
+      // nodeOps,
       // createRenderer,
       // DOM中的方法默认是使用DOM API提供的借口
-      // render,
-      // h
+      render,
+      h
     } = VueRuntimeDOM
 
     // // createRenderer返回一个自定义渲染器Render https://vuejs.org/api/custom-renderer.html#createrenderer 它其实是在RuntimeCore中提供的
@@ -48,7 +48,7 @@
     // }, '19Qingfeng')
     // renderer.render(vnode, document.getElementById('app'))
 
-    console.log(nodeOps, 'nodeOps')
+    render(h('div', h('div', '123'), h('div', '456')), app)
   </script>
 </body>
 
