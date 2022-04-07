@@ -48,7 +48,12 @@
     // }, '19Qingfeng')
     // renderer.render(vnode, document.getElementById('app'))
 
-    render(h('div', h('div', '123'), h('div', '456')), app)
+    render(h('div', {
+      style: {
+        color: 'red'
+      },
+      onClick: () => alert('wang.haoyu')
+    }, [h('div', 'hello')]), app)
   </script>
 </body>
 

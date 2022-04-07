@@ -17,7 +17,7 @@ export const nodeOps = {
     }
   },
   setElementText(el, text) {
-    el.textContext = text;
+    el.textContent = text;
   },
   setText(node, text) {
     node.nodeValue = text;

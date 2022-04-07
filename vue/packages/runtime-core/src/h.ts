@@ -30,6 +30,7 @@ export function h(type, propsOrChildren, children) {
     if (length > 3) {
       children = Array.from(arguments).slice(3);
     } else if (length === 3 && isVNode(children)) {
+      // 这里应该处理下字符串
       children = [children];
     }
     return createVNode(type, propsOrChildren, children);

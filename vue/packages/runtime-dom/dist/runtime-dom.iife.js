@@ -77,7 +77,44 @@ var VueRuntimeDom = (() => {
 
   // packages/runtime-core/src/renderer.ts
   function createRenderer(renderOptions2) {
+    const {
+      createElement: hostCreateElement,
+      createText: hostCreateText,
+      insert: hostInsert,
+      remove: hostRemove,
+      setElementText: hostSetElementText,
+      setText: hostSetText,
+      querySelector: hostQuerySelector,
+      parentNode: hostParentNode,
+      nextSibling: hostNextSibling,
+      patchProps: patchProps2
+    } = renderOptions2;
+    function mountChildren(el, children) {
+      children.forEach((vnode) => {
+        patch(null, vnode, el);
+      });
+    }
+    function mountElement(vnode, container) {
+      const { shapeFlag, type, props, children } = vnode;
+      vnode.el = hostCreateElement(type);
+      if (props) {
+        for (let key in props) {
+          patchProps2(vnode.el, key, null, props[key]);
+        }
+      }
+      if (children) {
+        if (shapeFlag & 8 /* TEXT_CHILDREN */) {
+          hostSetElementText(vnode.el, children);
+        } else if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
+          mountChildren(vnode.el, children);
+        }
+      }
+      hostInsert(container, vnode.el);
+    }
     function patch(n1, n2, container) {
+      if (n1 === null) {
+        mountElement(n2, container);
+      }
     }
     return {
       render: (vnode, container) => {
@@ -108,7 +145,7 @@ var VueRuntimeDom = (() => {
       }
     },
     setElementText(el, text) {
-      el.textContext = text;
+      el.textContent = text;
     },
     setText(node, text) {
       node.nodeValue = text;
