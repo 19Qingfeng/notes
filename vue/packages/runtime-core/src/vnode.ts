@@ -32,4 +32,6 @@ export function createVNode(type, props, children = null) {
       ? ShapeFlags.TEXT_CHILDREN
       : ShapeFlags.ARRAY_CHILDREN;
   }
+
+  return vnode;
 }

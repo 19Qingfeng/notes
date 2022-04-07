@@ -10,6 +10,7 @@ import { createVNode, isVNode } from './vnode';
  * 5. h('div',null, 'hello','world')
  * 6. h('div',h('span'))
  * 7. h('div',[h('span')])
+ * 通过h方法格式化参数，传递到createVNode时children只存在两种可能一种纯文本，一种是一个数组
  */
 export function h(type, propsOrChildren, children) {
   const length = arguments.length;
@@ -23,7 +24,7 @@ export function h(type, propsOrChildren, children) {
       return createVNode(type, propsOrChildren);
     } else {
       // 第二个参数非对象 有可能是字符串
-      createVNode(type, null, propsOrChildren);
+      return createVNode(type, null, propsOrChildren);
     }
   } else {
     if (length > 3) {

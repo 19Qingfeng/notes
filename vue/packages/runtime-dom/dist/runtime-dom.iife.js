@@ -20,8 +20,75 @@ var VueRuntimeDom = (() => {
   // packages/runtime-dom/src/index.ts
   var src_exports = {};
   __export(src_exports, {
-    domOps: () => renderOptions
+    domOps: () => renderOptions,
+    h: () => h,
+    render: () => render
   });
+
+  // packages/share/src/index.ts
+  function isPlainObj(value) {
+    return typeof value === "object" && value !== null;
+  }
+  var isArray = Array.isArray;
+  var isString = (val) => typeof val === "string";
+
+  // packages/runtime-core/src/vnode.ts
+  function isVNode(value) {
+    return value ? value.__v_isVNode === true : false;
+  }
+  function createVNode(type, props, children = null) {
+    let shapeFlag = isString(type) ? 1 /* ELEMENT */ : 0;
+    const vnode = {
+      type,
+      props,
+      children,
+      key: props == null ? void 0 : props.key,
+      el: null,
+      shapeFlag,
+      __v_isVNode: true
+    };
+    if (children) {
+      vnode.shapeFlag |= isString(children) ? 8 /* TEXT_CHILDREN */ : 16 /* ARRAY_CHILDREN */;
+    }
+    return vnode;
+  }
+
+  // packages/runtime-core/src/h.ts
+  function h(type, propsOrChildren, children) {
+    const length = arguments.length;
+    if (length === 2) {
+      if (isPlainObj(propsOrChildren) && !isArray(propsOrChildren)) {
+        if (isVNode(propsOrChildren)) {
+          return createVNode(type, null, [propsOrChildren]);
+        }
+        return createVNode(type, propsOrChildren);
+      } else {
+        return createVNode(type, null, propsOrChildren);
+      }
+    } else {
+      if (length > 3) {
+        children = Array.from(arguments).slice(3);
+      } else if (length === 3 && isVNode(children)) {
+        children = [children];
+      }
+      return createVNode(type, propsOrChildren, children);
+    }
+  }
+
+  // packages/runtime-core/src/renderer.ts
+  function createRenderer(renderOptions2) {
+    function patch(n1, n2, container) {
+    }
+    return {
+      render: (vnode, container) => {
+        if (vnode === null) {
+        } else {
+          patch(container.__vnode || null, vnode, container);
+        }
+        container.__vnode = vnode;
+      }
+    };
+  }
 
   // packages/runtime-dom/src/nodeOps.ts
   var nodeOps = {
@@ -127,6 +194,7 @@ var VueRuntimeDom = (() => {
 
   // packages/runtime-dom/src/index.ts
   var renderOptions = Object.assign(nodeOps, { patchProps });
+  var render = createRenderer(renderOptions).render;
   return __toCommonJS(src_exports);
 })();
 //# sourceMappingURL=runtime-dom.iife.js.map
