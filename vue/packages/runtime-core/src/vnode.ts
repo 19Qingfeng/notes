@@ -9,6 +9,15 @@ export function isVNode(value: any) {
 }
 
 /**
+ * 判断两个虚拟节点是否相同 满足标签名(type)相同 && key值相同
+ * @param n1
+ * @param n2
+ */
+export function isSameVNodeType(n1, n2) {
+  return n1.type === n2.type && n1.key === n2.key;
+}
+
+/**
  * 底层根据type，prop，child创建VNode h方法的底层调用
  * @param type 类型
  * @param prop 属性

@@ -49,15 +49,31 @@
     // }, '19Qingfeng')
     // renderer.render(vnode, document.getElementById('app'))
 
+    // render(h('div', {
+    //   style: {
+    //     color: 'red'
+    //   },
+    //   onClick: () => alert('wang.haoyu')
+    // }, [h('span', 'hello'), 'world']), app)
+    // render(h(Text, 'hello world'), app)
+    // render(h(Text, '123'), app)
+
     render(h('div', {
       style: {
         color: 'red'
       },
+      class: '你好',
       onClick: () => alert('wang.haoyu')
-    }, [h('span', 'hello'), 'world']), app)
-    // render(h(Text, '123'), app)
+    }, 'after'), app)
+
+
     setTimeout(() => {
-      render(null, app)
+      render(h('div', {
+        style: {
+          color: 'blue'
+        },
+        onClick: () => alert('19Qingfeng')
+      }, 'before'), app)
     }, 1000)
   </script>
 </body>

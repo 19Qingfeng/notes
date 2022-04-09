@@ -1,5 +1,5 @@
 import { isString, ShapeFlags } from '@vue/share';
-import { createVNode, Text } from './vnode';
+import { createVNode, isSameVNodeType, Text } from './vnode';
 
 export function createRenderer(renderOptions) {
   const {
@@ -12,7 +12,7 @@ export function createRenderer(renderOptions) {
     querySelector: hostQuerySelector,
     parentNode: hostParentNode,
     nextSibling: hostNextSibling,
-    patchProps,
+    patchProps: hostPatchProps,
   } = renderOptions;
 
   /**
@@ -34,14 +34,36 @@ export function createRenderer(renderOptions) {
     });
   }
 
-  // 挂载元素节点
-  function processText(n1, n2, container) {
-    const { children } = n2;
-    if (n1 === null) {
-      // 初始化文本
-      n2.el = hostCreateText(children);
+  /**
+   * 更新元素属性
+   */
+  function patchProps(oldProps, newProps, container) {
+    // 更新原本节点中newProps中的属性
+    for (let newKey in newProps) {
+      hostPatchProps(container, newKey, oldProps[newKey], newProps[newKey]);
     }
-    hostInsert(n2.el, container);
+    // 同时移除已经不存在的属性
+    for (let oldKey in oldProps) {
+      if (newProps[oldKey] === null) {
+        hostPatchProps(container, oldKey, oldProps[oldKey], null);
+      }
+    }
+  }
+
+  /**
+   * 比较两个虚拟节点children的差异
+   * @param n1
+   * @param n2
+   */
+  function patchChildren(n1, n2) {
+    const el = n2.children;
+    const n1Children = n1.children;
+    const n2Children = n2.children;
+    // 其实这里进入的Vnode children无非有三种情况
+    // 要么是Text 要么是Array 要么是什么都没传直接是走默认值null
+    console.log(n1, 'n1');
+    console.log(n2, 'n2');
+    console.log(n2Children, 'n2Children');
   }
 
   // 挂载元素
@@ -52,7 +74,7 @@ export function createRenderer(renderOptions) {
     // 2.属性
     if (props) {
       for (let key in props) {
-        patchProps(vnode.el, key, null, props[key]);
+        hostPatchProps(vnode.el, key, null, props[key]);
       }
     }
     // 3.儿子
@@ -69,24 +91,86 @@ export function createRenderer(renderOptions) {
     hostInsert(vnode.el, container);
   }
 
-  // !核心:DomDiff patch 方法
-  function patch(n1, n2, container) {
-    const { type, shapeFlag } = n2;
+  /**
+   * !相同元素（相同key）更新逻辑，涉及DOM Diff
+   * @param n1
+   * @param n2
+   * @param container
+   */
+  function patchElement(n1, n2, container) {
+    n2.el = n1.el;
+
+    // 1.对比属性
+    const n1Props = n1.props || {};
+    const n2Props = n2.props || {};
+    patchProps(n1Props, n2Props, n2.el);
+
+    // 2.对比children
+    patchChildren(n1, n2);
+  }
+
+  /**
+   * 处理文本节点
+   * @param n1
+   * @param n2
+   * @param container
+   */
+  function processText(n1, n2, container) {
+    const { children } = n2;
     if (n1 === null) {
-      switch (type) {
-        // 文本
-        case Text:
-          processText(n1, n2, container);
-          break;
-        default:
-          // 元素
-          if (shapeFlag & ShapeFlags.ELEMENT) {
-            mountElement(n2, container);
-          }
-          break;
+      // 创建
+      n2.el = hostCreateText(children);
+      hostInsert(n2.el, container);
+    } else {
+      // 更新
+      // 1. 复用上一次的Dom节点 TextNode
+      n2.el = n1.el;
+      if (n2.children !== n1.children) {
+        // 文本内容有更新 更新节点中的内容即可
+        hostSetElementText(n2.el, n2.children);
       }
     }
-    // TODO: rest logic
+  }
+
+  /**
+   * 处理元素节点
+   * @param n1
+   * @param n2
+   * @param container
+   */
+  function processElement(n1, n2, container) {
+    if (n1 === null) {
+      mountElement(n2, container);
+    } else {
+      // 更新
+      patchElement(n1, n2, container);
+    }
+  }
+
+  // !核心:DomDiff patch 比对 vnode 方法方法
+  function patch(n1, n2, container) {
+    const { type, shapeFlag } = n2;
+
+    // 不相同的元素节点 压根不需要DOM Diff
+    if (n1 && !isSameVNodeType(n1, n2)) {
+      // 删除n2
+      unmount(n1);
+      // 将n1变为null 接下来相当于重新创建n2进行挂载
+      n1 = null;
+    }
+
+    switch (type) {
+      // 文本
+      case Text:
+        processText(n1, n2, container);
+        break;
+      default:
+        // 元素
+        if (shapeFlag & ShapeFlags.ELEMENT) {
+          processElement(n1, n2, container);
+        }
+        break;
+    }
   }
 
   /**
@@ -94,7 +178,7 @@ export function createRenderer(renderOptions) {
    */
   function unmount(vnode) {
     // 页面卸载对应HTML节点
-    hostRemove(vnode);
+    hostRemove(vnode.el);
     // 清空引用
     vnode.el = null;
   }
