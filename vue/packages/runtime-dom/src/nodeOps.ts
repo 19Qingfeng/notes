@@ -8,7 +8,7 @@ export const nodeOps = {
     return document.createTextNode(text);
   },
   insert(el, parent, anchor = null) {
-    el.insertBefore(parent, anchor);
+    parent.insertBefore(el, anchor);
   },
   remove(el) {
     const parent = el.parentNode;

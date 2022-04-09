@@ -19,6 +19,7 @@
       // nodeOps,
       // createRenderer,
       // DOM中的方法默认是使用DOM API提供的借口
+      Text,
       render,
       h
     } = VueRuntimeDom
@@ -53,7 +54,11 @@
         color: 'red'
       },
       onClick: () => alert('wang.haoyu')
-    }, [h('div', 'hello')]), app)
+    }, [h('span', 'hello'), 'world']), app)
+    // render(h(Text, '123'), app)
+    setTimeout(() => {
+      render(null, app)
+    }, 1000)
   </script>
 </body>
 

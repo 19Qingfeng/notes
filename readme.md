@@ -32,7 +32,9 @@ vue 源码简单实现。
 
 - Reactive 模块: Computed、Watch、Ref 基础原理。
 
-* Runtime-core 模块
+* Runtime-dom 模块: 针对于浏览器环境下的 vue Api vnode 接口。
+
+* Runtime-core 模块: 核心虚拟 DOM vnode 模块 ing
 
 ## events
 

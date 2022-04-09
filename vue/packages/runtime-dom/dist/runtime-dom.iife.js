@@ -20,6 +20,7 @@ var VueRuntimeDom = (() => {
   // packages/runtime-dom/src/index.ts
   var src_exports = {};
   __export(src_exports, {
+    Text: () => Text,
     domOps: () => renderOptions,
     h: () => h,
     render: () => render
@@ -33,6 +34,7 @@ var VueRuntimeDom = (() => {
   var isString = (val) => typeof val === "string";
 
   // packages/runtime-core/src/vnode.ts
+  var Text = Symbol("Text");
   function isVNode(value) {
     return value ? value.__v_isVNode === true : false;
   }
@@ -89,10 +91,24 @@ var VueRuntimeDom = (() => {
       nextSibling: hostNextSibling,
       patchProps: patchProps2
     } = renderOptions2;
+    function normalize(vnode) {
+      if (isString(vnode)) {
+        return createVNode(Text, null, vnode);
+      }
+      return vnode;
+    }
     function mountChildren(el, children) {
       children.forEach((vnode) => {
-        patch(null, vnode, el);
+        let childVNode = normalize(vnode);
+        patch(null, childVNode, el);
       });
+    }
+    function processText(n1, n2, container) {
+      const { children } = n2;
+      if (n1 === null) {
+        n2.el = hostCreateText(children);
+      }
+      hostInsert(n2.el, container);
     }
     function mountElement(vnode, container) {
       const { shapeFlag, type, props, children } = vnode;
@@ -109,16 +125,32 @@ var VueRuntimeDom = (() => {
           mountChildren(vnode.el, children);
         }
       }
-      hostInsert(container, vnode.el);
+      hostInsert(vnode.el, container);
     }
     function patch(n1, n2, container) {
+      const { type, shapeFlag } = n2;
       if (n1 === null) {
-        mountElement(n2, container);
+        switch (type) {
+          case Text:
+            processText(n1, n2, container);
+            break;
+          default:
+            if (shapeFlag & 1 /* ELEMENT */) {
+              mountElement(n2, container);
+            }
+            break;
+        }
       }
+    }
+    function unmount(vnode) {
+      hostRemove(vnode);
+      vnode.el = null;
     }
     return {
       render: (vnode, container) => {
         if (vnode === null) {
+          if (container.__vnode)
+            unmount(container.__vnode);
         } else {
           patch(container.__vnode || null, vnode, container);
         }
@@ -136,7 +168,7 @@ var VueRuntimeDom = (() => {
       return document.createTextNode(text);
     },
     insert(el, parent, anchor = null) {
-      el.insertBefore(parent, anchor);
+      parent.insertBefore(el, anchor);
     },
     remove(el) {
       const parent = el.parentNode;
