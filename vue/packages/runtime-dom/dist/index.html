@@ -58,13 +58,15 @@
     // render(h(Text, 'hello world'), app)
     // render(h(Text, '123'), app)
 
+
+    // case: 1. 相同元素相同Key 进入DomDiff，儿子首次元素 二次文本
     render(h('div', {
       style: {
         color: 'red'
       },
       class: '你好',
       onClick: () => alert('wang.haoyu')
-    }, 'after'), app)
+    }, [h('span', '你好')]), app)
 
 
     setTimeout(() => {
@@ -72,8 +74,8 @@
         style: {
           color: 'blue'
         },
-        onClick: () => alert('19Qingfeng')
-      }, 'before'), app)
+        class: '13'
+      }, 'hello'), app)
     }, 1000)
   </script>
 </body>

@@ -26,12 +26,29 @@ export function createRenderer(renderOptions) {
     return vnode;
   }
 
+  /**
+   * 卸载逻辑
+   */
+  function unmount(vnode) {
+    // 页面卸载对应HTML节点
+    hostRemove(vnode.el);
+    // 清空引用
+    vnode.el = null;
+  }
+
   function mountChildren(el, children) {
     children.forEach((vnode) => {
       // vnode有可能仅仅只是一个字符串
       let childVNode = normalize(vnode);
       patch(null, childVNode, el);
     });
+  }
+
+  function unMountChildren(children) {
+    for (let i = 0; i < children.length; i++) {
+      // 移除之前所有儿子节点
+      unmount(children[i]);
+    }
   }
 
   /**
@@ -52,21 +69,42 @@ export function createRenderer(renderOptions) {
 
   /**
    * 比较两个虚拟节点children的差异
-   * @param n1
-   * @param n2
+   * @param n1 旧的节点 vnode
+   * @param n2 新的节点 vnode
    */
   function patchChildren(n1, n2) {
     const el = n2.children;
     const n1Children = n1.children;
     const n2Children = n2.children;
-    // 其实这里进入的Vnode children无非有三种情况
-    // 要么是Text 要么是Array 要么是什么都没传直接是走默认值null
-    console.log(n1, 'n1');
-    console.log(n2, 'n2');
-    console.log(n2Children, 'n2Children');
+
+    const prevShapeFlag = n1.shapeFlag;
+
+    const shapeFlag = n2.shapeFlag;
+
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        // case: 1.新的是文本节点 旧的是数组节点 不需要DOMDiff
+        // 卸载元素所有子节点 同时为元素设置文本节点
+        unMountChildren(n1Children);
+      }
+      // 剩下就是说明之前也是文本
+      if (n1Children !== n2Children) {
+        hostSetElementText(n2.el, n2Children);
+      }
+    } else {
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          // case: 两次孩子都是数组 DOM Diff
+        } else {
+          // case: 旧的是数组 新的是空
+        }
+      }
+    }
   }
 
-  // 挂载元素
+  /**
+   * 挂载元素
+   */
   function mountElement(vnode, container) {
     const { shapeFlag, type, props, children } = vnode;
     // 1.根据元素类型创建元素
@@ -150,7 +188,6 @@ export function createRenderer(renderOptions) {
   // !核心:DomDiff patch 比对 vnode 方法方法
   function patch(n1, n2, container) {
     const { type, shapeFlag } = n2;
-
     // 不相同的元素节点 压根不需要DOM Diff
     if (n1 && !isSameVNodeType(n1, n2)) {
       // 删除n2
@@ -158,7 +195,6 @@ export function createRenderer(renderOptions) {
       // 将n1变为null 接下来相当于重新创建n2进行挂载
       n1 = null;
     }
-
     switch (type) {
       // 文本
       case Text:
@@ -171,16 +207,6 @@ export function createRenderer(renderOptions) {
         }
         break;
     }
-  }
-
-  /**
-   * 卸载逻辑
-   */
-  function unmount(vnode) {
-    // 页面卸载对应HTML节点
-    hostRemove(vnode.el);
-    // 清空引用
-    vnode.el = null;
   }
 
   return {

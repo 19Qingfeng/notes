@@ -152,6 +152,16 @@ function trigger(target, type, key, value, oldValue) {
     return;
   }
 
+  effects = new Set(effects);
+  effects.forEach((effect) => {
+    // *解决3.2 Effect中继续触发setter递归一直调用effect，此时仅仅会执行一次effect
+    if (activeEffect !== effect) {
+      // 默认数据变化重新调用effect.run()重新执行清空当前Effect依赖重新执行Effect中fn进行重新收集依赖以及视图更新
+      effect.run();
+    })
+}
+
+
   triggerEffects(effects);
 }
 

@@ -100,11 +100,20 @@ var VueRuntimeDom = (() => {
       }
       return vnode;
     }
+    function unmount(vnode) {
+      hostRemove(vnode.el);
+      vnode.el = null;
+    }
     function mountChildren(el, children) {
       children.forEach((vnode) => {
         let childVNode = normalize(vnode);
         patch(null, childVNode, el);
       });
+    }
+    function unMountChildren(children) {
+      for (let i = 0; i < children.length; i++) {
+        unmount(children[i]);
+      }
     }
     function patchProps2(oldProps, newProps, container) {
       for (let newKey in newProps) {
@@ -120,9 +129,22 @@ var VueRuntimeDom = (() => {
       const el = n2.children;
       const n1Children = n1.children;
       const n2Children = n2.children;
-      console.log(n1, "n1");
-      console.log(n2, "n2");
-      console.log(n2Children, "n2Children");
+      const prevShapeFlag = n1.shapeFlag;
+      const shapeFlag = n2.shapeFlag;
+      if (shapeFlag & 8 /* TEXT_CHILDREN */) {
+        if (prevShapeFlag & 16 /* ARRAY_CHILDREN */) {
+          unMountChildren(n1Children);
+        }
+        if (n1Children !== n2Children) {
+          hostSetElementText(n2.el, n2Children);
+        }
+      } else {
+        if (prevShapeFlag & 16 /* ARRAY_CHILDREN */) {
+          if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
+          } else {
+          }
+        }
+      }
     }
     function mountElement(vnode, container) {
       const { shapeFlag, type, props, children } = vnode;
@@ -183,10 +205,6 @@ var VueRuntimeDom = (() => {
           }
           break;
       }
-    }
-    function unmount(vnode) {
-      hostRemove(vnode.el);
-      vnode.el = null;
     }
     return {
       render: (vnode, container) => {
