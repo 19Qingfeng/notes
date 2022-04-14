@@ -67,13 +67,16 @@ export function createRenderer(renderOptions) {
     }
   }
 
+  function patchKeyedChildren() {
+
+  }
+
   /**
    * 比较两个虚拟节点children的差异
    * @param n1 旧的节点 vnode
    * @param n2 新的节点 vnode
    */
   function patchChildren(n1, n2) {
-    const el = n2.children;
     const n1Children = n1.children;
     const n2Children = n2.children;
 
@@ -81,6 +84,7 @@ export function createRenderer(renderOptions) {
 
     const shapeFlag = n2.shapeFlag;
 
+    // 现在是文本 进入
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         // case: 1.新的是文本节点 旧的是数组节点 不需要DOMDiff
@@ -92,11 +96,28 @@ export function createRenderer(renderOptions) {
         hostSetElementText(n2.el, n2Children);
       }
     } else {
+      // 现在一定非文本 有可能孩子为数组或者null
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
           // case: 两次孩子都是数组 DOM Diff
+          // 全量DOM Diff 暂时不考虑靶向更新
+          debugger
+          patchKeyedChildren(n1Children, n2Children, n2.el)
         } else {
-          // case: 旧的是数组 新的是空
+          // case: 旧的是数组 新的是null空 这样的情况卸载之前的就OK
+          unMountChildren(n1Children)
+        }
+      } else {
+        // 之前一定不会是数组，
+        // 之前不是数组，现在是非文本
+        if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+          // 之前是文本 需要清空文本节点
+          hostSetElementText(n2.el, '')
+        }
+        // 现在如果是数组
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          // 将新的孩子元素节点进行挂载
+          mountChildren(n2Children, n2.el)
         }
       }
     }

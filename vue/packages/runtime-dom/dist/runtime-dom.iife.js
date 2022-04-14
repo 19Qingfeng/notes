@@ -125,8 +125,9 @@ var VueRuntimeDom = (() => {
         }
       }
     }
+    function patchKeyedChildren() {
+    }
     function patchChildren(n1, n2) {
-      const el = n2.children;
       const n1Children = n1.children;
       const n2Children = n2.children;
       const prevShapeFlag = n1.shapeFlag;
@@ -141,7 +142,17 @@ var VueRuntimeDom = (() => {
       } else {
         if (prevShapeFlag & 16 /* ARRAY_CHILDREN */) {
           if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
+            debugger;
+            patchKeyedChildren(n1Children, n2Children, n2.el);
           } else {
+            unMountChildren(n1Children);
+          }
+        } else {
+          if (prevShapeFlag & 8 /* TEXT_CHILDREN */) {
+            hostSetElementText(n2.el, "");
+          }
+          if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
+            mountChildren(n2Children, n2.el);
           }
         }
       }
