@@ -66,7 +66,19 @@
       },
       class: '你好',
       onClick: () => alert('wang.haoyu')
-    }, [h('span', '你好')]), app)
+    }, [
+      '123',
+      h('span', {
+        key: 1
+      }, '第一个'),
+      h('span', {
+        key: 2
+      }, '第二个'),
+      h('span', {
+        key: 3
+      }, '第三个')
+
+    ]), app)
 
 
     setTimeout(() => {
@@ -75,7 +87,20 @@
           color: 'blue'
         },
         class: '13'
-      }, h('span', '你好啊')), app)
+      }, [
+        h('span', {
+          key: 1
+        }, '第一个更新/'),
+        h('span', {
+          key: 2
+        }, '第二个更新/'),
+        h('span', {
+          key: 3
+        }, '第三个更新/'),
+
+
+
+      ]), app)
     }, 1000)
   </script>
 </body>

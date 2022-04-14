@@ -1,4 +1,4 @@
-export function patchStyle(el, prevValue, nextValue) {
+export function patchStyle(el, prevValue, nextValue = {}) {
   // 样式需要比对差异
 
   // 新的需要立即生效
