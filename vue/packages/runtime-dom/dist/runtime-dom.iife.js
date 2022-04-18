@@ -133,7 +133,7 @@ var VueRuntimeDom = (() => {
         const n1 = c1[i];
         const n2 = c2[i];
         if (isSameVNodeType(n1, n2)) {
-          patch(n1, n2, n1.el);
+          patch(n1, n2, el);
           i++;
         } else {
           break;
@@ -144,7 +144,7 @@ var VueRuntimeDom = (() => {
         const n1 = c1[e1];
         const n2 = c2[e2];
         if (isSameVNodeType(n1, n2)) {
-          patch(n1, n2, n1.el);
+          patch(n1, n2, el);
           e1--;
           e2--;
         } else {
@@ -171,6 +171,34 @@ var VueRuntimeDom = (() => {
         }
       }
       console.log(`i--${i}`, `el--${e1}`, `e2--${e2}`, "xx");
+      const s1 = i;
+      const s2 = i;
+      const toBePatchLength = e2 - s2 + 1;
+      const keyedMap = /* @__PURE__ */ new Map();
+      const MappingArr = new Array(toBePatchLength).fill(0);
+      for (let i2 = s2; i2 <= e2; i2++) {
+        keyedMap.set(c2[i2].key, i2);
+      }
+      for (let i2 = s1; i2 <= e1; i2++) {
+        const oldVnode = c1[i2];
+        const newIndex = keyedMap.get(oldVnode.key);
+        if (!newIndex) {
+          unmount(oldVnode);
+        } else {
+          MappingArr[newIndex - s2] = i2 + 1;
+          patch(oldVnode, c2[newIndex], el);
+        }
+      }
+      for (let i2 = toBePatchLength - 1; i2 >= 0; i2--) {
+        const index = i2 + s2;
+        const current = c2[index];
+        const anchor = index + 1 <= c2.length ? c2[index + 1].el : null;
+        if (MappingArr[i2] > 0) {
+          hostInsert(current.el, el, anchor);
+        } else {
+          patch(null, current, el, anchor);
+        }
+      }
     }
     function patchChildren(n1, n2) {
       const n1Children = n1.children;
@@ -218,7 +246,7 @@ var VueRuntimeDom = (() => {
       }
       hostInsert(vnode.el, container, anchor);
     }
-    function patchElement(n1, n2, container) {
+    function patchElement(n1, n2) {
       n2.el = n1.el;
       const n1Props = n1.props || {};
       const n2Props = n2.props || {};
@@ -241,7 +269,7 @@ var VueRuntimeDom = (() => {
       if (n1 === null) {
         mountElement(n2, container, anchor);
       } else {
-        patchElement(n1, n2, container);
+        patchElement(n1, n2);
       }
     }
     function patch(n1, n2, container, anchor = null) {

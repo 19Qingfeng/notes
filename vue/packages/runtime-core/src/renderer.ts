@@ -86,7 +86,7 @@ export function createRenderer(renderOptions) {
       const n2 = c2[i];
       if (isSameVNodeType(n1, n2)) {
         // dom diff
-        patch(n1, n2, n1.el);
+        patch(n1, n2, el);
         i++;
       } else {
         // 头部顺序不存在可以进行 dom diff 的元素了
@@ -100,7 +100,7 @@ export function createRenderer(renderOptions) {
       const n1 = c1[e1];
       const n2 = c2[e2];
       if (isSameVNodeType(n1, n2)) {
-        patch(n1, n2, n1.el);
+        patch(n1, n2, el);
         e1--;
         e2--;
       } else {
@@ -142,6 +142,49 @@ export function createRenderer(renderOptions) {
 
     // 非特殊情况:剩下的就是需要进行乱序对比的
     console.log(`i--${i}`, `el--${e1}`, `e2--${e2}`, 'xx');
+    const s1 = i; // 乱序时旧节点的开头指针 s1
+    const s2 = i; // 新节点的开头指针 s2
+
+    const toBePatchLength = e2 - s2 + 1; // 乱序对比新元素的总个数
+    // 以所有新乱序vnode作为一个映射表 之后循环老的乱序节点 查找映射表中是否存在相同key的元素
+    // 如果存在则修改即可 不存在则需要卸载
+    const keyedMap = new Map();
+    // 记录当前乱序新元素集合的位置对应 c1中老元素的位置（存在则为对应位置+1，不存在则为0）
+    const MappingArr = new Array(toBePatchLength).fill(0);
+    for (let i = s2; i <= e2; i++) {
+      keyedMap.set(c2[i].key, i);
+    }
+
+    // 循环老的元素 查看映射表中是否存在
+    // 如果存在相同key则比较差异
+    // 如果不存在（老的存在，新的不存在）则需要卸载旧的该节点
+    for (let i = s1; i <= e1; i++) {
+      const oldVnode = c1[i];
+      const newIndex = keyedMap.get(oldVnode.key); // 寻找新的vnode索引
+      // 如果newIndex未找到相同key的元素 说明oldVnode存在 但是新的没有了 需要卸载
+      if (!newIndex) {
+        unmount(oldVnode);
+      } else {
+        // 表示找到了 也就是老的节点在新的中时存在的（保存对应的位置）
+        MappingArr[newIndex - s2] = i + 1;
+        patch(oldVnode, c2[newIndex], el);
+      }
+    }
+
+    // 这样之后需要移动位置
+    for (let i = toBePatchLength - 1; i >= 0; i--) {
+      // 倒序插入 insertBefore
+      const index = i + s2; // 这个元素应该的位置
+      const current = c2[index]; // 当前代表的节点
+      const anchor = index + 1 <= c2.length ? c2[index + 1].el : null;
+      if (MappingArr[i] > 0) {
+        // 旧的已经存在过 将之前的el 进行追加 因为已经patch过（复用了之前的vnode）
+        hostInsert(current.el, el, anchor);
+      } else {
+        // 如果是新的节点 那么不会存在el 需要新建
+        patch(null, current, el, anchor);
+      }
+    }
   }
 
   /**
@@ -228,14 +271,13 @@ export function createRenderer(renderOptions) {
    * @param n2
    * @param container
    */
-  function patchElement(n1, n2, container) {
+  function patchElement(n1, n2) {
     n2.el = n1.el;
 
     // 1.对比属性
     const n1Props = n1.props || {};
     const n2Props = n2.props || {};
     patchProps(n1Props, n2Props, n2.el);
-
     // 2.对比children
     patchChildren(n1, n2);
   }
@@ -274,7 +316,7 @@ export function createRenderer(renderOptions) {
       mountElement(n2, container, anchor);
     } else {
       // 更新
-      patchElement(n1, n2, container);
+      patchElement(n1, n2);
     }
   }
 

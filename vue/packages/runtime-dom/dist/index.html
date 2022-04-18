@@ -64,19 +64,25 @@
       style: {
         color: 'red'
       },
-      class: '你好',
-      onClick: () => alert('wang.haoyu')
     }, [
-      '123',
       h('span', {
         key: 1
-      }, '第一个'),
+      }, 'a'),
       h('span', {
         key: 2
-      }, '第二个'),
+      }, 'b'),
       h('span', {
         key: 3
-      }, '第三个')
+      }, 'c'),
+      h('span', {
+        key: 10
+      }, 'd'),
+      h('span', {
+        key: 9
+      }, 'e'),
+      h('span', {
+        key: 100
+      }, 'last')
 
     ]), app)
 
@@ -85,18 +91,26 @@
       render(h('div', {
         style: {
           color: 'blue'
-        },
-        class: '13'
+        }
       }, [
         h('span', {
           key: 1
-        }, '第一个更新/'),
+        }, 'a'),
         h('span', {
           key: 2
-        }, '第二个更新/'),
+        }, 'b'),
         h('span', {
           key: 3
-        }, '第三个更新/'),
+        }, 'c'),
+        h('span', {
+          key: 9
+        }, 'f'),
+        h('span', {
+          key: 10
+        }, 'g'),
+        h('span', {
+          key: 100
+        }, 'last')
 
 
 
