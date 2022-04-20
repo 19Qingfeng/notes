@@ -1,4 +1,5 @@
 import { isString, ShapeFlags } from '@vue/share';
+import { getSequence } from './sequence';
 import { createVNode, isSameVNodeType, Text } from './vnode';
 
 export function createRenderer(renderOptions) {
@@ -93,7 +94,6 @@ export function createRenderer(renderOptions) {
         break;
       }
     }
-    console.log(i, e1, e2, 'n+++');
 
     // 特殊情况2: 同理 sync from end 从头在寻找对应可以 Dom Diff 的元素
     while (i <= e1 && i <= e2) {
@@ -141,7 +141,7 @@ export function createRenderer(renderOptions) {
     }
 
     // 非特殊情况:剩下的就是需要进行乱序对比的
-    console.log(`i--${i}`, `el--${e1}`, `e2--${e2}`, 'xx');
+    // console.log(`i--${i}`, `el--${e1}`, `e2--${e2}`, 'xx');
     const s1 = i; // 乱序时旧节点的开头指针 s1
     const s2 = i; // 新节点的开头指针 s2
 
@@ -151,6 +151,9 @@ export function createRenderer(renderOptions) {
     const keyedMap = new Map();
     // 记录当前乱序新元素集合的位置对应 c1中老元素的位置（存在则为对应位置+1，不存在则为0）
     const MappingArr = new Array(toBePatchLength).fill(0);
+
+    // 获取当前乱序中最长的递增子序列的索引，保持递增序列位置不变，仅仅改变插入别的元素位置
+
     for (let i = s2; i <= e2; i++) {
       keyedMap.set(c2[i].key, i);
     }
@@ -170,16 +173,39 @@ export function createRenderer(renderOptions) {
         patch(oldVnode, c2[newIndex], el);
       }
     }
+    // debugger;
 
+    // 获取当前新旧节点列表对应的最长递增子序列的优化
+    // MappingArr 下标为新节点位置，值为对应旧节点位置
+    // MappingArr 中保存的下标就是乱序比对中新节点的顺序（下标一定是从小到大）
+    // 其次 MappingArr 中保存的值，是当前索引位置对应的旧节点的位置
+    // 所以查找出 MappingArr 中最长的递增子序列，它表示旧节点重拍后按照新节点的顺序可保持的最大不用移动长度
+    // 在进行DOM移动时保持不变即可
+    // 需要注意的是 increment 获取的是 MappingArr 中最长递增子序列的索引
+    // 换句话说也就是 寻找 MappingArr 中 value 值为递增的最长子序列，之后保存对应的索引（该索引对应的就是新节点不需要插入移动的）
+    // !很巧妙呀 获得按照旧的（可复用）节点顺序
+    const increment = getSequence(MappingArr);
+
+    let j = increment.length - 1;
     // 这样之后需要移动位置
     for (let i = toBePatchLength - 1; i >= 0; i--) {
       // 倒序插入 insertBefore
       const index = i + s2; // 这个元素应该的位置
       const current = c2[index]; // 当前代表的节点
-      const anchor = index + 1 <= c2.length ? c2[index + 1].el : null;
+      const anchor = index + 1 <= c2.length ? c2[index + 1].el : null; // 参照物
       if (MappingArr[i] > 0) {
+        // 注意如果对比patch过了后 n1和n2的el是同一个节点，只不过是仍在旧的位置而已
+        // 非0表示当前新节点对应的el因为旧的中存在相同key，所以patch过了
         // 旧的已经存在过 将之前的el 进行追加 因为已经patch过（复用了之前的vnode）
-        hostInsert(current.el, el, anchor);
+
+        // 倒序插入时 寻找是否在递增序列中
+        debugger;
+        if (i !== increment[j]) {
+          // 不再最长递增子序列中的索引中
+          hostInsert(current.el, el, anchor);
+        } else {
+          j--;
+        }
       } else {
         // 如果是新的节点 那么不会存在el 需要新建
         patch(null, current, el, anchor);
@@ -361,3 +387,92 @@ export function createRenderer(renderOptions) {
     },
   };
 }
+
+/** 
+ * 
+ * render(h('div', {
+      style: {
+        color: 'red'
+      },
+    }, [
+      h('span', {
+        key: 1
+      }, 'a'),
+      h('span', {
+        key: 2
+      }, 'b'),
+      h('span', {
+        key: 3
+      }, 'c'),
+      h('span', {
+        key: 9
+      }, 'c'),
+      h('span', {
+        key: 10
+      }, 'd'),
+      h('span', {
+        key: 7
+      }, 'e'),
+      h('span', {
+        key: 100
+      }, 'last')
+
+    ]), app)
+
+
+    setTimeout(() => {
+      render(h('div', {
+        style: {
+          color: 'blue'
+        }
+      }, [
+        h('span', {
+          key: 1
+        }, 'a'),
+        h('span', {
+          key: 2
+        }, 'b'),
+        h('span', {
+          key: 3
+        }, 'c'),
+        h('span', {
+          key: 7
+        }, 'f'),
+        h('span', {
+          key: 9
+        }, 'ff'),
+        h('span', {
+          key: 10
+        }, 'g'),
+        h('span', {
+          key: 100
+        }, 'last')
+      ]), app)
+ * 这整个过程可以参考 Demo: @vue/runtime-dom/dist/index.html 代码
+ * 首先针对于中一个元素el进行首次render时正常进行挂载，当render完成后
+ * 会对App Dom 下挂载一个 __vnode 属性，值为传入的vnode节点
+ * 
+ * 二次渲染时，调用render 会检查app节点是否存在 __vnode 属性
+ * 存在 -> 利用新旧vnode进行 patch方法 dom diff
+ * 首先 patch 方法检测两个vnode前后key值相同(同为undefined所以根据元素类型进行处理)
+ * 该元素为Dom节点 所以进行 processElement -> patchElement(直接复用之前的dom元素)
+ * 首先对比属性 patchProps
+ * 之后 parchChildren 进行对比儿子节点
+ * 对比 children 时发现前后都为数组 所以进行 patchKeyedChildren
+ * 进入 Dom diff 四指针方法
+ * 1. 特殊情况:先取头尾进行处理，处理相同节点相同key的情况同时进行移动指针
+ * 2. 特殊情况:再处理是否存在前后某一个为另一个的子集合
+ * 3. 剩下为中间部分乱序 也就是 [9,10,7] -> [7,9,10]
+ * 此时，首先会根据新vnode列表做一层key值映射，遍历旧的vnode查看旧的vnode在对应新的列表中是否存在
+ * 存在 -> patch 新旧节点
+ * 不存在 -> unmount 旧的vnode
+ * 之后会根据新的乱序节点vnode列表进行倒序插入
+ * （同时之前会记录一个 MappingArr ，MappingArr的顺序为新vnode列表的顺序，按照新的vnode排列顺序来创建一个数组）
+ * (MappingArr中key为新vnode的顺序，value为该索引位置对应的旧节点位置。如果旧的不存在则该位置标记为0)
+ * 寻找 MappingArr 中的最长递增子序列索引
+ * 新的vnode列表中的元素下标如果满足 最长递增子序列索引 ，那么则不需要进行 dom 移动 保持原始顺序即可。（因为其他元素移动就可以满足要求组成新的vnode排列顺序）
+ * 新的vnode列表中的元素下标如果不满足 最长递增子序列索引 ，那么它需要找到它的后一个元素，进行 hostInsert 也就是 insertBefore Api 修改元素排列顺序，同时如果之前的元素节点不存在，（也就是 MappingArr 中该位置对应value为0，那么就创建该元素）
+ * 同时按照后一个节点，同样插入到它的后一个节点之前。
+ * 
+ * 至此，Dom Diff 完整过程结束。
+*/

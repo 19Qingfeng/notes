@@ -3,7 +3,7 @@
  * Vue3中对于Dom Diff的优化 -> 最长递增子序列
  * @param {*} arr
  */
-function getSequence(arr) {
+export function getSequence(arr) {
   const length = arr.length - 1;
 
   const result = [0]; // 保存的是索引

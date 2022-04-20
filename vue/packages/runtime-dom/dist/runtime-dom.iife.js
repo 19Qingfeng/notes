@@ -80,6 +80,46 @@ var VueRuntimeDom = (() => {
     }
   }
 
+  // packages/runtime-core/src/sequence.ts
+  function getSequence(arr) {
+    const length = arr.length - 1;
+    const result = [0];
+    const p = new Array(arr.length).fill(0);
+    for (let i = 0; i <= length; i++) {
+      const maxIndex = result[result.length - 1];
+      const lastResultValue = arr[maxIndex];
+      const currentValue = arr[i];
+      if (currentValue === lastResultValue) {
+        continue;
+      }
+      if (lastResultValue < currentValue) {
+        result.push(i);
+        p[i] = maxIndex;
+        continue;
+      }
+      let start = 0, middle = 0, end = result.length - 1;
+      while (start < end) {
+        middle = (start + end) / 2 | 0;
+        const middleValue = arr[result[middle]];
+        if (currentValue > middleValue) {
+          start = middle + 1;
+        } else {
+          end = middle;
+        }
+      }
+      result[start] = i;
+      p[i] = result[start - 1];
+    }
+    let resultLength = result.length;
+    let last = result[resultLength - 1];
+    while (resultLength-- > 0) {
+      result[resultLength] = last;
+      last = p[last];
+    }
+    return result;
+  }
+  console.log(getSequence([2, 3, 1, 5, 6, 8, 7, 9, 4]));
+
   // packages/runtime-core/src/renderer.ts
   function createRenderer(renderOptions2) {
     const {
@@ -139,7 +179,6 @@ var VueRuntimeDom = (() => {
           break;
         }
       }
-      console.log(i, e1, e2, "n+++");
       while (i <= e1 && i <= e2) {
         const n1 = c1[e1];
         const n2 = c2[e2];
@@ -170,7 +209,6 @@ var VueRuntimeDom = (() => {
           }
         }
       }
-      console.log(`i--${i}`, `el--${e1}`, `e2--${e2}`, "xx");
       const s1 = i;
       const s2 = i;
       const toBePatchLength = e2 - s2 + 1;
@@ -189,12 +227,19 @@ var VueRuntimeDom = (() => {
           patch(oldVnode, c2[newIndex], el);
         }
       }
+      const increment = getSequence(MappingArr);
+      let j = increment.length - 1;
       for (let i2 = toBePatchLength - 1; i2 >= 0; i2--) {
         const index = i2 + s2;
         const current = c2[index];
         const anchor = index + 1 <= c2.length ? c2[index + 1].el : null;
         if (MappingArr[i2] > 0) {
-          hostInsert(current.el, el, anchor);
+          debugger;
+          if (i2 !== increment[j]) {
+            hostInsert(current.el, el, anchor);
+          } else {
+            j--;
+          }
         } else {
           patch(null, current, el, anchor);
         }
