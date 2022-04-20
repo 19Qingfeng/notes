@@ -1,5 +1,5 @@
 import { h } from './h';
 import { createRenderer } from './renderer';
-import { Text } from './vnode';
+import { Text, Fragment } from './vnode';
 
-export { createRenderer, h, Text };
+export { createRenderer, h, Text, Fragment };

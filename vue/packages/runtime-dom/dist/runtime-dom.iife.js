@@ -20,6 +20,7 @@ var VueRuntimeDom = (() => {
   // packages/runtime-dom/src/index.ts
   var src_exports = {};
   __export(src_exports, {
+    Fragment: () => Fragment,
     Text: () => Text,
     domOps: () => renderOptions,
     h: () => h,
@@ -35,6 +36,7 @@ var VueRuntimeDom = (() => {
 
   // packages/runtime-core/src/vnode.ts
   var Text = Symbol("Text");
+  var Fragment = Symbol("Fragment");
   function isVNode(value) {
     return value ? value.__v_isVNode === true : false;
   }
@@ -234,7 +236,6 @@ var VueRuntimeDom = (() => {
         const current = c2[index];
         const anchor = index + 1 <= c2.length ? c2[index + 1].el : null;
         if (MappingArr[i2] > 0) {
-          debugger;
           if (i2 !== increment[j]) {
             hostInsert(current.el, el, anchor);
           } else {
@@ -310,6 +311,14 @@ var VueRuntimeDom = (() => {
         }
       }
     }
+    function processFragment(n1, n2, container, anchor) {
+      if (n1 === null) {
+        console.log(n2, "n2");
+        mountChildren(container, n2.children);
+      } else {
+        patchChildren(n1.children, n2.children);
+      }
+    }
     function processElement(n1, n2, container, anchor) {
       if (n1 === null) {
         mountElement(n2, container, anchor);
@@ -327,6 +336,8 @@ var VueRuntimeDom = (() => {
         case Text:
           processText(n1, n2, container, anchor);
           break;
+        case Fragment:
+          processFragment(n1, n2, container, anchor);
         default:
           if (shapeFlag & 1 /* ELEMENT */) {
             processElement(n1, n2, container, anchor);

@@ -1,6 +1,6 @@
-import { isString, ShapeFlags } from '@vue/share';
+import { isArray, isString, ShapeFlags } from '@vue/share';
 import { getSequence } from './sequence';
-import { createVNode, isSameVNodeType, Text } from './vnode';
+import { createVNode, Fragment, isSameVNodeType, Text } from './vnode';
 
 export function createRenderer(renderOptions) {
   const {
@@ -38,6 +38,7 @@ export function createRenderer(renderOptions) {
   }
 
   function mountChildren(el, children) {
+    // 这里的children有可能是非array
     children.forEach((vnode, index) => {
       // vnode有可能仅仅只是一个字符串
       let childVNode = (children[index] = normalize(vnode));
@@ -199,7 +200,6 @@ export function createRenderer(renderOptions) {
         // 旧的已经存在过 将之前的el 进行追加 因为已经patch过（复用了之前的vnode）
 
         // 倒序插入时 寻找是否在递增序列中
-        debugger;
         if (i !== increment[j]) {
           // 不再最长递增子序列中的索引中
           hostInsert(current.el, el, anchor);
@@ -278,6 +278,7 @@ export function createRenderer(renderOptions) {
       }
     }
     // 3.儿子
+    // debugger;
     if (children) {
       if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
         // 文本
@@ -332,6 +333,22 @@ export function createRenderer(renderOptions) {
   }
 
   /**
+   * 处理Fragment
+   * @param n1 旧节点
+   * @param n2 新节点
+   * @param container 挂载元素
+   */
+  function processFragment(n1, n2, container, anchor) {
+    if (n1 === null) {
+      // 直接挂载对应n2的children
+      console.log(n2, 'n2');
+      mountChildren(container, n2.children);
+    } else {
+      patchChildren(n1.children, n2.children);
+    }
+  }
+
+  /**
    * 处理元素节点
    * @param n1
    * @param n2
@@ -357,12 +374,15 @@ export function createRenderer(renderOptions) {
       n1 = null;
     }
     switch (type) {
-      // 文本
+      // 文本: 直接hostCreateText + hostInsert/hostSetElementText
       case Text:
         processText(n1, n2, container, anchor);
         break;
+      // Fragment： 本质就是直接mountChildren/patchChildren 到container上
+      case Fragment:
+        processFragment(n1, n2, container, anchor);
       default:
-        // 元素
+        // 元素: 多种情况，可能会Dom diff
         if (shapeFlag & ShapeFlags.ELEMENT) {
           processElement(n1, n2, container, anchor);
         }

@@ -4,6 +4,8 @@ import { isArray, isString, ShapeFlags } from '@vue/share';
 
 export const Text = Symbol('Text');
 
+export const Fragment = Symbol('Fragment');
+
 export function isVNode(value: any) {
   return value ? value.__v_isVNode === true : false;
 }
