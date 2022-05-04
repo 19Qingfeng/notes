@@ -13,15 +13,20 @@
 
 var A = function () {};
 
+a = new A();
+
 Function.prototype.a = function () {};
 
 Object.prototype.b = function () {};
 
+// new 调用 a.__proto__ -> A.prototype -> A.prototype.__proto__
 a = new A();
 
 console.log(A.a); // *A.__proto -> Function.prototype -> 找到
 console.log(A.b); // *A.__proto -> Function.prototype ->  Function.prototype.__proto__ -> Object.prototype 找到
 
+// ! 注意这里是  A.prototype.__proto__ (这是一个对象)  指向的是 Object.prototype
+// ! 而 A.__proto__ (根据继承关系) 指向的是 Function.prototype
 console.log(a.a); // !a.__proto -> A.prototype -> A.prototype.__proto__ -> Object.prototype -> 找不到
 console.log(a.b); // *a.__proto -> A.prototype -> A.prototype,__proto -> Object.prototype -> 找到
 

@@ -36,6 +36,10 @@ vue 源码简单实现。
 
 * Runtime-core 模块: 核心虚拟 DOM vnode 模块, DOM Diff 过程。Component ing
 
+## TypeScript
+
+[如何进阶 TypeScript 功底？一文带你理解 TS 中各种高级语法](https://juejin.cn/post/7089809919251054628)
+
 ## events
 
 Node 中的核心 events 发布定于模式。
@@ -73,3 +77,7 @@ express 源码解读， ing 写了一半。
 ## 网络协议目录
 
 待梳理..
+
+## Web 二进制应用
+
+[Blob、File、ArrayBuffer、TypedArray、DataView 究竟应该如何应用](https://vuejuejin.cn/post/7093908575935807502)
