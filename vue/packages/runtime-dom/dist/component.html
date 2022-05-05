@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <!-- <script src="../../../node_modules/@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.iife.js"></script>
+  <script>
+    const {
+      // nodeOps,
+      // createRenderer,
+      // DOM中的方法默认是使用DOM API提供的借口
+      Text,
+      render,
+      h,
+      Fragment
+    } = VueRuntimeDOM
+
+    const VueComponent = {
+      data() {
+        return {
+          name: '19Qingfeng',
+          age: 25
+        }
+      },
+      render() {
+        setTimeout(() => {
+          this.name += 1;
+          this.age++;
+        }, 1000)
+        return h('p', {}, `${this.name}今年${this.age}岁了!`)
+      }
+    }
+
+    render(h(VueComponent), app)
+
+    // render(
+    //   h(Fragment, [
+    //     h('h1', '1243'),
+    //     h(Text, '你好')
+    //   ]), app)
+  </script>
+</body>
+
+</html>

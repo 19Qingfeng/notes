@@ -28,12 +28,12 @@ export class ReactiveEffect {
   // 用于记录当前Effect中依赖的所有属性对应的Set effect 用于每次更新时清空对应属性存储的这个effect
   public deps = [];
   // 任务调度器
-  public scheduler;
-  constructor(fn, scheduler) {
+  public scheduler?;
+  constructor(fn, schedule?) {
     this.fn = fn;
     this.active = true;
     this.parent = undefined;
-    this.scheduler = scheduler;
+    this.scheduler = schedule;
   }
 
   run() {
@@ -152,15 +152,14 @@ function trigger(target, type, key, value, oldValue) {
     return;
   }
 
-  effects = new Set(effects);
-  effects.forEach((effect) => {
-    // *解决3.2 Effect中继续触发setter递归一直调用effect，此时仅仅会执行一次effect
-    if (activeEffect !== effect) {
-      // 默认数据变化重新调用effect.run()重新执行清空当前Effect依赖重新执行Effect中fn进行重新收集依赖以及视图更新
-      effect.run();
-    })
-}
-
+  // effects = new Set(effects);
+  // effects.forEach((effect) => {
+  //   // *解决3.2 Effect中继续触发setter递归一直调用effect，此时仅仅会执行一次effect
+  //   if (activeEffect !== effect) {
+  //     // 默认数据变化重新调用effect.run()重新执行清空当前Effect依赖重新执行Effect中fn进行重新收集依赖以及视图更新
+  //     effect.run();
+  //   }
+  // });
 
   triggerEffects(effects);
 }

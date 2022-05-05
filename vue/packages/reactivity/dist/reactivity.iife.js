@@ -38,12 +38,12 @@ var VueReactivity = (() => {
     return runner;
   }
   var ReactiveEffect = class {
-    constructor(fn, scheduler) {
+    constructor(fn, schedule) {
       this.deps = [];
       this.fn = fn;
       this.active = true;
       this.parent = void 0;
-      this.scheduler = scheduler;
+      this.scheduler = schedule;
     }
     run() {
       if (!this.active) {
@@ -94,6 +94,12 @@ var VueReactivity = (() => {
     if (!effects) {
       return;
     }
+    effects = new Set(effects);
+    effects.forEach((effect2) => {
+      if (activeEffect !== effect2) {
+        effect2.run();
+      }
+    });
     triggerEffects(effects);
   }
   function triggerEffects(effects) {

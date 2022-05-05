@@ -1,6 +1,6 @@
 // 表示当前vnode类型 type
 
-import { isArray, isString, ShapeFlags } from '@vue/share';
+import { isArray, isPlainObj, isString, ShapeFlags } from '@vue/share';
 
 export const Text = Symbol('Text');
 
@@ -27,7 +27,11 @@ export function isSameVNodeType(n1, n2) {
  */
 export function createVNode(type, props, children = null) {
   // 当前节点类型
-  let shapeFlag = isString(type) ? ShapeFlags.ELEMENT : 0;
+  let shapeFlag = isString(type)
+    ? ShapeFlags.ELEMENT
+    : isPlainObj(type)
+    ? ShapeFlags.STATEFUL_COMPONENT
+    : 0;
 
   const vnode = {
     type,

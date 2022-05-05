@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "buildOptions": {
-    "name": "VueRuntimeDom",
+    "name": "VueRuntimeDOM",
     "formats": [
       "esm-bundler",
       "esm-browser",

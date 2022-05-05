@@ -57,6 +57,7 @@ export function getSequence(arr) {
   // !同时根据p列表确定了每个节点对应的前节点，方便追溯
 
   // !之后通过最后一个最大的序列节点结合p列表进行前节点追溯确认顺序
+  // !最后一个节点一定是在最长递增子序列中
   let resultLength = result.length;
   let last = result[resultLength - 1]; // 最大的一项
   while (resultLength-- > 0) {

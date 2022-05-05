@@ -1,4 +1,7 @@
+import { reactive } from '@vue/reactivity';
 import { isArray, isString, ShapeFlags } from '@vue/share';
+import { ReactiveEffect } from 'packages/reactivity/src/effect';
+import { queueJob } from './scheduler';
 import { getSequence } from './sequence';
 import { createVNode, Fragment, isSameVNodeType, Text } from './vnode';
 
@@ -264,6 +267,57 @@ export function createRenderer(renderOptions) {
     }
   }
 
+  function mountComponent(vnode, container, anchor) {
+    // 这里的type就是组件
+    const { type } = vnode;
+    // 从组件中拿到data和render
+    const { data = () => {}, render } = type;
+    // 将data变成响应式数据
+    const state = reactive(data());
+    // 创建组件的实例进行挂载
+    const instance = {
+      state,
+      // 类似Vue2中的 $vnode -> 自身的Vnode
+      vnode, // 每个组件都拥有自己的虚拟节点(!组件自身的虚拟节点)
+      // 类似于Vue2中的_vnode -> 渲染的Vnode
+      subTree: null, // 组件渲染的虚拟节点(render中渲染的Vnode)
+      // 表示组件是否挂载
+      isMounted: false,
+      // 强制更新组件方法
+      update: null,
+    };
+
+    const updateComponent = () => {
+      console.log('执行');
+      if (instance.isMounted) {
+        // 当前组件内部State改变组件更新 获取当前组件最新subTree
+        const subTree = render.call(state);
+        // 调用patch比对当前组件render更新前后渲染的Vnode
+        patch(instance.subTree, subTree, container, anchor);
+        instance.subTree = subTree;
+      } else {
+        // 组件还未挂载
+        // 调用render将state变为this 获得Vnode
+        const subTree = (instance.subTree = render.call(state));
+        // 同时将subTree挂载在el上
+        patch(null, subTree, container, anchor);
+        instance.isMounted = true;
+      }
+    };
+
+    // 每次组件当前组件的state改变 当前组件重新渲染
+    // 利用effect收集组件中使用到的响应式数据
+    // !批量更新 并不需要每个State改变都重新渲染组件执行render
+    // !而是说每次都要异步批量更新
+    const effect = new ReactiveEffect(updateComponent, () => {
+      // ! 批量更新
+      queueJob(instance.update);
+    });
+    // 渲染更新 同时调用当前的effect.run会强制更新当前组件
+    const update = (instance.update = effect.run.bind(effect));
+    update();
+  }
+
   /**
    * 挂载元素
    */
@@ -341,7 +395,6 @@ export function createRenderer(renderOptions) {
   function processFragment(n1, n2, container, anchor) {
     if (n1 === null) {
       // 直接挂载对应n2的children
-      console.log(n2, 'n2');
       mountChildren(container, n2.children);
     } else {
       patchChildren(n1.children, n2.children);
@@ -360,6 +413,21 @@ export function createRenderer(renderOptions) {
     } else {
       // 更新
       patchElement(n1, n2);
+    }
+  }
+
+  /**
+   * 处理组件
+   * @param n1
+   * @param n2
+   * @param container
+   * @param anchor
+   */
+  function processComponent(n1, n2, container, anchor) {
+    if (n1 === null) {
+      mountComponent(n2, container, anchor);
+    } else {
+      // 组件更新
     }
   }
 
@@ -385,6 +453,9 @@ export function createRenderer(renderOptions) {
         // 元素: 多种情况，可能会Dom diff
         if (shapeFlag & ShapeFlags.ELEMENT) {
           processElement(n1, n2, container, anchor);
+        } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          // 处理组件
+          processComponent(n1, n2, container, anchor);
         }
         break;
     }
@@ -392,6 +463,7 @@ export function createRenderer(renderOptions) {
 
   return {
     render: (vnode, container) => {
+      // debugger;
       // 如果当前vNode可能为空 那么可能为卸载
       // 比如为 render(null, document.getElementById('app'))
       if (vnode === null) {
