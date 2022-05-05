@@ -1,6 +1,7 @@
 import { reactive } from '@vue/reactivity';
-import { isArray, isString, ShapeFlags } from '@vue/share';
+import { hasOwn, isArray, isString, ShapeFlags } from '@vue/share';
 import { ReactiveEffect } from 'packages/reactivity/src/effect';
+import { createComponentInstance, setupComponent } from './component';
 import { queueJob } from './scheduler';
 import { getSequence } from './sequence';
 import { createVNode, Fragment, isSameVNodeType, Text } from './vnode';
@@ -268,37 +269,33 @@ export function createRenderer(renderOptions) {
   }
 
   function mountComponent(vnode, container, anchor) {
-    // 这里的type就是组件
-    const { type } = vnode;
-    // 从组件中拿到data和render
-    const { data = () => {}, render } = type;
-    // 将data变成响应式数据
-    const state = reactive(data());
-    // 创建组件的实例进行挂载
-    const instance = {
-      state,
-      // 类似Vue2中的 $vnode -> 自身的Vnode
-      vnode, // 每个组件都拥有自己的虚拟节点(!组件自身的虚拟节点)
-      // 类似于Vue2中的_vnode -> 渲染的Vnode
-      subTree: null, // 组件渲染的虚拟节点(render中渲染的Vnode)
-      // 表示组件是否挂载
-      isMounted: false,
-      // 强制更新组件方法
-      update: null,
-    };
+    // 1.构造组件实例 instance
+    const instance = (vnode.component = createComponentInstance(vnode));
+    // 2.填充实例属性 启动组件
+    setupComponent(instance);
+    // 3.利用effect包裹组件 构成数据改变页面更新（全部以instance为主，instance上的属性已经聚合了所有的vnode等等属性）
+    setupRenderEffect(instance, container, anchor);
+  }
 
-    const updateComponent = () => {
-      console.log('执行');
+  /**
+   *  为组件包裹effect 为组件关联数据响应式
+   * @param instance
+   * @param container
+   * @param anchor
+   */
+  function setupRenderEffect(instance, container, anchor) {
+    const { render, proxy } = instance;
+    const componentUpdateFn = () => {
       if (instance.isMounted) {
         // 当前组件内部State改变组件更新 获取当前组件最新subTree
-        const subTree = render.call(state);
+        const subTree = render.call(proxy);
         // 调用patch比对当前组件render更新前后渲染的Vnode
         patch(instance.subTree, subTree, container, anchor);
         instance.subTree = subTree;
       } else {
         // 组件还未挂载
         // 调用render将state变为this 获得Vnode
-        const subTree = (instance.subTree = render.call(state));
+        const subTree = (instance.subTree = render.call(proxy));
         // 同时将subTree挂载在el上
         patch(null, subTree, container, anchor);
         instance.isMounted = true;
@@ -309,7 +306,7 @@ export function createRenderer(renderOptions) {
     // 利用effect收集组件中使用到的响应式数据
     // !批量更新 并不需要每个State改变都重新渲染组件执行render
     // !而是说每次都要异步批量更新
-    const effect = new ReactiveEffect(updateComponent, () => {
+    const effect = new ReactiveEffect(componentUpdateFn, () => {
       // ! 批量更新
       queueJob(instance.update);
     });

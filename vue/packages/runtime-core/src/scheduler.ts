@@ -17,12 +17,12 @@ export function queueJob(job) {
     nextTick.then(() => {
       isFlushing = false;
       const copyQueue = queue.slice(0);
+      queue.length = 0;
       for (let i = 0; i < copyQueue.length; i++) {
         const job = copyQueue[i];
         job();
       }
       copyQueue.length = 0;
-      queue.length = 0;
     });
   }
 }

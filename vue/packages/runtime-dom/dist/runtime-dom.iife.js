@@ -31,7 +31,11 @@ var VueRuntimeDOM = (() => {
   function isPlainObj(value) {
     return typeof value === "object" && value !== null;
   }
+  function isFunction(value) {
+    return typeof value === "function";
+  }
   var isArray = Array.isArray;
+  var hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
   var isString = (val) => typeof val === "string";
 
   // packages/runtime-core/src/vnode.ts
@@ -204,6 +208,82 @@ var VueRuntimeDOM = (() => {
     return proxy;
   };
 
+  // packages/runtime-core/src/componentProps.ts
+  function initProps(instance, rawProps) {
+    const props = {};
+    const attrs = {};
+    const options = instance.propsOptions || {};
+    if (rawProps) {
+      for (let key in rawProps) {
+        const value = rawProps[key];
+        if (hasOwn(options, key)) {
+          props[key] = value;
+        } else {
+          attrs[key] = value;
+        }
+      }
+    }
+    instance.props = reactive(props);
+    instance.attrs = attrs;
+  }
+
+  // packages/runtime-core/src/component.ts
+  function createComponentInstance(vnode) {
+    const instance = {
+      data: null,
+      vnode,
+      subTree: null,
+      isMounted: false,
+      update: null,
+      render: null,
+      propsOptions: vnode.type.props,
+      props: {},
+      attrs: {},
+      proxy: {}
+    };
+    return instance;
+  }
+  var publishPropertyMap = {
+    $attrs: (i) => i.attrs
+  };
+  var publishInstanceProxy = {
+    get(target, key, receiver) {
+      const { props, data } = target;
+      if (hasOwn(data, key)) {
+        return data[key];
+      } else if (hasOwn(props, key)) {
+        return props[key];
+      } else {
+        const getter = publishPropertyMap[key];
+        if (getter) {
+          return getter(target);
+        }
+        return Reflect.get(target, key, receiver);
+      }
+    },
+    set(target, key, value) {
+      const { props, data } = target;
+      if (hasOwn(data, key)) {
+        data[key] = value;
+        return true;
+      } else if (hasOwn(props, key)) {
+        console.warn("Don't Revise Component Props");
+      }
+      return false;
+    }
+  };
+  function setupComponent(instance) {
+    const { props, type } = instance.vnode;
+    initProps(instance, props);
+    instance.proxy = new Proxy(instance, publishInstanceProxy);
+    const { data, render: render2 } = type;
+    if (!isFunction(data)) {
+      console.error("Component Data Must Be Function");
+    }
+    instance.data = reactive(data.call(instance.proxy));
+    instance.render = render2;
+  }
+
   // packages/runtime-core/src/scheduler.ts
   var queue = [];
   var nextTick = Promise.resolve();
@@ -217,12 +297,12 @@ var VueRuntimeDOM = (() => {
       nextTick.then(() => {
         isFlushing = false;
         const copyQueue = queue.slice(0);
+        queue.length = 0;
         for (let i = 0; i < copyQueue.length; i++) {
           const job2 = copyQueue[i];
           job2();
         }
         copyQueue.length = 0;
-        queue.length = 0;
       });
     }
   }
@@ -421,30 +501,24 @@ var VueRuntimeDOM = (() => {
       }
     }
     function mountComponent(vnode, container, anchor) {
-      const { type } = vnode;
-      const { data = () => {
-      }, render: render2 } = type;
-      const state = reactive(data());
-      const instance = {
-        state,
-        vnode,
-        subTree: null,
-        isMounted: false,
-        update: null
-      };
-      const updateComponent = () => {
-        console.log("\u6267\u884C");
+      const instance = vnode.component = createComponentInstance(vnode);
+      setupComponent(instance);
+      setupRenderEffect(instance, container, anchor);
+    }
+    function setupRenderEffect(instance, container, anchor) {
+      const { render: render2, proxy } = instance;
+      const componentUpdateFn = () => {
         if (instance.isMounted) {
-          const subTree = render2.call(state);
+          const subTree = render2.call(proxy);
           patch(instance.subTree, subTree, container, anchor);
           instance.subTree = subTree;
         } else {
-          const subTree = instance.subTree = render2.call(state);
+          const subTree = instance.subTree = render2.call(proxy);
           patch(null, subTree, container, anchor);
           instance.isMounted = true;
         }
       };
-      const effect2 = new ReactiveEffect(updateComponent, () => {
+      const effect2 = new ReactiveEffect(componentUpdateFn, () => {
         queueJob(instance.update);
       });
       const update = instance.update = effect2.run.bind(effect2);

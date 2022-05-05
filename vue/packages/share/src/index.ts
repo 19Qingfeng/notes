@@ -8,6 +8,9 @@ export function isFunction(value: any): value is Function {
 
 export const isArray = Array.isArray;
 
+export const hasOwn = (obj, key) =>
+  Object.prototype.hasOwnProperty.call(obj, key);
+
 export const isString = (val: unknown): val is string =>
   typeof val === 'string';
 

@@ -24,6 +24,9 @@
     } = VueRuntimeDOM
 
     const VueComponent = {
+      props: {
+        address: String,
+      },
       data() {
         return {
           name: '19Qingfeng',
@@ -31,15 +34,14 @@
         }
       },
       render() {
-        setTimeout(() => {
-          this.name += 1;
-          this.age++;
-        }, 1000)
-        return h('p', {}, `${this.name}今年${this.age}岁了!`)
+        return h('p', {}, [this.address, this.$attrs.post])
       }
     }
 
-    render(h(VueComponent), app)
+    render(h(VueComponent, {
+      address: '海淀',
+      post: 'Web Front Engineer'
+    }), app)
 
     // render(
     //   h(Fragment, [
