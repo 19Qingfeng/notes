@@ -13,7 +13,7 @@ function createInvoker(fn) {
  * @param nextValue
  */
 export function patchEvent(el, eventName, nextValue) {
-  const invokers = el._vei ? el._vei : (el._vel = {});
+  const invokers = el._vei ? el._vei : (el._vei = {});
 
   const exits = invokers[eventName];
 
@@ -25,7 +25,7 @@ export function patchEvent(el, eventName, nextValue) {
     if (nextValue) {
       const invoker = (invokers[eventName] = createInvoker(nextValue));
       el.addEventListener(name, invoker);
-    } else {
+    } else if (exits) {
       el.removeEventListener(name, exits);
       invokers[eventName] = undefined;
     }

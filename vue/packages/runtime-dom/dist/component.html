@@ -38,16 +38,14 @@
       }
     }
 
-    render(h(VueComponent, {
+    const vnode = h(VueComponent, {
       address: '海淀',
       post: 'Web Front Engineer'
-    }), app)
+    })
 
-    // render(
-    //   h(Fragment, [
-    //     h('h1', '1243'),
-    //     h(Text, '你好')
-    //   ]), app)
+    // !!!!!这里调试下整体流程 过一下组件渲染
+    debugger
+    render(vnode, app)
   </script>
 </body>
 

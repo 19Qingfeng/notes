@@ -33,6 +33,7 @@ export function createComponentInstance(vnode) {
 
 // 公共的属性映射表 比如访问 this.$attr 时,等等
 const publishPropertyMap = {
+  $: (i) => i,
   $attrs: (i) => i.attrs,
 };
 
@@ -79,7 +80,7 @@ export function setupComponent(instance) {
   instance.proxy = new Proxy(instance, publishInstanceProxy);
 
   // 拿到组件的data和render
-  const { data, render } = type;
+  const { data = () => ({}), render } = type;
   if (!isFunction(data)) {
     // data 在 Vue3 必须是函数
     console.error('Component Data Must Be Function');

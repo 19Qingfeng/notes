@@ -160,7 +160,6 @@ function trigger(target, type, key, value, oldValue) {
   //     effect.run();
   //   }
   // });
-
   triggerEffects(effects);
 }
 

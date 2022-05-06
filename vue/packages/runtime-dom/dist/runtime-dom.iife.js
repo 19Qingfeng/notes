@@ -226,6 +226,33 @@ var VueRuntimeDOM = (() => {
     instance.props = reactive(props);
     instance.attrs = attrs;
   }
+  function hasPropsChanged(prevProps, nextProps) {
+    const prevPropsLength = Object.keys(prevProps);
+    const nextPropsLength = Object.keys(nextProps);
+    if (prevPropsLength.length !== nextPropsLength.length) {
+      return true;
+    }
+    for (let key of prevPropsLength) {
+      const value = prevProps[key];
+      const nextValue = nextProps[key];
+      if (value !== nextValue) {
+        return true;
+      }
+    }
+    return false;
+  }
+  function updateProps(instance, prevProps, nextProps) {
+    if (hasPropsChanged(prevProps, nextProps)) {
+      for (let key in nextProps) {
+        instance.props[key] = nextProps[key];
+      }
+      for (let oldKey in instance.props) {
+        if (!hasOwn(nextProps, oldKey)) {
+          delete instance.props[oldKey];
+        }
+      }
+    }
+  }
 
   // packages/runtime-core/src/component.ts
   function createComponentInstance(vnode) {
@@ -244,6 +271,7 @@ var VueRuntimeDOM = (() => {
     return instance;
   }
   var publishPropertyMap = {
+    $: (i) => i,
     $attrs: (i) => i.attrs
   };
   var publishInstanceProxy = {
@@ -276,7 +304,7 @@ var VueRuntimeDOM = (() => {
     const { props, type } = instance.vnode;
     initProps(instance, props);
     instance.proxy = new Proxy(instance, publishInstanceProxy);
-    const { data, render: render2 } = type;
+    const { data = () => ({}), render: render2 } = type;
     if (!isFunction(data)) {
       console.error("Component Data Must Be Function");
     }
@@ -505,6 +533,12 @@ var VueRuntimeDOM = (() => {
       setupComponent(instance);
       setupRenderEffect(instance, container, anchor);
     }
+    function updateComponent(n1, n2) {
+      const instance = n2.component = n1.component;
+      const prevProps = n1.props;
+      const nextProps = n2.props;
+      updateProps(instance, prevProps, nextProps);
+    }
     function setupRenderEffect(instance, container, anchor) {
       const { render: render2, proxy } = instance;
       const componentUpdateFn = () => {
@@ -578,6 +612,7 @@ var VueRuntimeDOM = (() => {
       if (n1 === null) {
         mountComponent(n2, container, anchor);
       } else {
+        updateComponent(n1, n2);
       }
     }
     function patch(n1, n2, container, anchor = null) {
@@ -673,7 +708,7 @@ var VueRuntimeDOM = (() => {
     return invoker;
   }
   function patchEvent(el, eventName, nextValue) {
-    const invokers = el._vei ? el._vei : el._vel = {};
+    const invokers = el._vei ? el._vei : el._vei = {};
     const exits = invokers[eventName];
     if (exits) {
       exits.value = nextValue;
@@ -682,7 +717,7 @@ var VueRuntimeDOM = (() => {
       if (nextValue) {
         const invoker = invokers[eventName] = createInvoker(nextValue);
         el.addEventListener(name, invoker);
-      } else {
+      } else if (exits) {
         el.removeEventListener(name, exits);
         invokers[eventName] = void 0;
       }

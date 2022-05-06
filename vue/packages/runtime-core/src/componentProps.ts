@@ -33,3 +33,44 @@ export function initProps(instance, rawProps) {
   instance.props = reactive(props);
   instance.attrs = attrs;
 }
+
+/**
+ * 检查是否需要更新
+ */
+function hasPropsChanged(prevProps, nextProps) {
+  // 首先检查key的个数是否改变
+  const prevPropsLength = Object.keys(prevProps);
+  const nextPropsLength = Object.keys(nextProps);
+
+  if (prevPropsLength.length !== nextPropsLength.length) {
+    return true;
+  }
+
+  // 其次检查value值是否改变
+  for (let key of prevPropsLength) {
+    const value = prevProps[key];
+    const nextValue = nextProps[key];
+    if (value !== nextValue) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * 更新Props
+ */
+export function updateProps(instance, prevProps, nextProps) {
+  if (hasPropsChanged(prevProps, nextProps)) {
+    // 更新现有属性
+    for (let key in nextProps) {
+      instance.props[key] = nextProps[key];
+    }
+    // 删除老的属性
+    for (let oldKey in instance.props) {
+      if (!hasOwn(nextProps, oldKey)) {
+        delete instance.props[oldKey];
+      }
+    }
+  }
+}

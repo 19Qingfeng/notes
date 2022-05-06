@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <!-- <script src="../../../node_modules/@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.iife.js"></script>
+  <script>
+    const {
+      // nodeOps,
+      // createRenderer,
+      // DOM中的方法默认是使用DOM API提供的借口
+      Text,
+      render,
+      h,
+      Fragment
+    } = VueRuntimeDOM
+
+    const ChildrenComponent = {
+      props: {
+        address: String
+      },
+      render() {
+        // 子render并不会执行
+        // 父的state改变导致父重新进行更新组件
+        // 当前组件state改变 => 
+        // componentUpdateFn调用当前组件更新 => 
+        // 执行当前组件render函数生成新的subTree => 
+        // 同时对于当前组件subTree进行前后patch => 
+        // patch时是patch当前组件的subTree，也就是子组件(patch时会进入children的patch（也就会达到子组件）)
+        // => 当patch对应子组件，会传入旧的subTree也就是n1节点
+        // => 之后子组件patch进入updateComponent(patchElement)逻辑 
+        // =>复用n1.component(instance) 或者复用vnode.el Dom元素
+        // => 检查子组件Props是否发生改变，如果子组件props没有改变。那么子组件并不会重新渲染(重新执行子组件自身Render)
+        // => 如果发生改变，那么就会修改instance.props 改变响应式数据(shallowReactive)，导致当前组件的effect执行，从而重新渲染改组件(执行改组件的render生成subTree进行前后patch)
+        // 当前上述前提是满足DOMDiff情况，如果不满足DOMDiff直接卸载全部重新渲染挂载
+
+        // ----分割线----
+
+        // 之所以复用instance => 因为每次当前组件重新render时 => 对于子组件：
+        // （存在DOM Diff）的情况 (不满足DOM Diff)直接就卸载全部重新渲染了
+        // 1. 子组件是Dom 复用 Dom 节点，因为父重新渲染。子相同，直接复用DOM 之后进行patchProps、patchChildren
+        // 2. 子组件是Component 复用 instance 实例，因为父重新渲染。子相同，直接复用实例 之后进行判断子组件props是否改变，改变->改变instance.props(响应式数据改变会重新渲染执行render) ,未改变 -> 什么都不做(也不会重新执行render)
+        return h('div', this.address)
+      }
+    }
+
+    const VueComponent = {
+      data() {
+        return {
+          flag: false,
+          testFlag: false
+        }
+      },
+      render() {
+        setInterval(() => {
+          this.testFlag = !this.testFlag
+        }, 1000)
+        return h('div', {}, [
+          h('button', {
+            onClick: () => {
+              console.log(1, '1')
+              this.flag = !this.flag
+            }
+          }, '切换'),
+          h(ChildrenComponent, {
+            address: this.flag ? '海淀' : '长安'
+          })
+        ])
+      }
+    }
+
+    // !!!!!这里调试下整体流程 过一下组件渲染
+    render(h(VueComponent), app)
+  </script>
+</body>
+
+</html>

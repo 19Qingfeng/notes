@@ -2,6 +2,7 @@ import { reactive } from '@vue/reactivity';
 import { hasOwn, isArray, isString, ShapeFlags } from '@vue/share';
 import { ReactiveEffect } from 'packages/reactivity/src/effect';
 import { createComponentInstance, setupComponent } from './component';
+import { updateProps } from './componentProps';
 import { queueJob } from './scheduler';
 import { getSequence } from './sequence';
 import { createVNode, Fragment, isSameVNodeType, Text } from './vnode';
@@ -278,6 +279,25 @@ export function createRenderer(renderOptions) {
   }
 
   /**
+   * 更新组件
+   * 组件的状态变化一定会更新组件
+   * 当组件的状态改变时，会patch两个组件。同时会patchChildren
+   * 此时，组件的子组件会判断当前后props是否改变
+   * 如果改变 -> 那么更新props的值 因为props是响应式的所以改变会更新组件
+   * @param n1
+   * @param n2
+   */
+  function updateComponent(n1, n2) {
+    // 组件的话 可以复用组件的实例instance 元素复用的是DOM
+    const instance = (n2.component = n1.component);
+    // 旧的PropsValue
+    const prevProps = n1.props;
+    const nextProps = n2.props;
+    // 更新组件props
+    updateProps(instance, prevProps, nextProps);
+  }
+
+  /**
    *  为组件包裹effect 为组件关联数据响应式
    * @param instance
    * @param container
@@ -287,6 +307,7 @@ export function createRenderer(renderOptions) {
     const { render, proxy } = instance;
     const componentUpdateFn = () => {
       if (instance.isMounted) {
+        // 组件更新会进入这里
         // 当前组件内部State改变组件更新 获取当前组件最新subTree
         const subTree = render.call(proxy);
         // 调用patch比对当前组件render更新前后渲染的Vnode
@@ -301,7 +322,6 @@ export function createRenderer(renderOptions) {
         instance.isMounted = true;
       }
     };
-
     // 每次组件当前组件的state改变 当前组件重新渲染
     // 利用effect收集组件中使用到的响应式数据
     // !批量更新 并不需要每个State改变都重新渲染组件执行render
@@ -424,7 +444,9 @@ export function createRenderer(renderOptions) {
     if (n1 === null) {
       mountComponent(n2, container, anchor);
     } else {
-      // 组件更新
+      // 组件更新 组件状态改变会走到processComponent
+      // n1位组件的subtree n2为新的render后的subTree
+      updateComponent(n1, n2);
     }
   }
 
