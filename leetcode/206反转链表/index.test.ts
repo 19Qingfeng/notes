@@ -1,4 +1,4 @@
-import { createLinkListByArr, revertLinkList } from '.';
+import { createLinkListByArr, revertLinkList } from './index';
 
 describe('反转链表', () => {
   it('case 1', () => {
