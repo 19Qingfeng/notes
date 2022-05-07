@@ -4,6 +4,8 @@
  * 数据结构上来说：数组查询快，新增删除慢。而链表查询慢，新增删除快（O1）。
  */
 
+import { Queue } from './link-list-with-queue';
+
 export interface ILinkListNode {
   value: number;
   next?: ILinkListNode;
@@ -47,3 +49,30 @@ export function revertLinkList(head: ILinkListNode) {
   }
   return prev;
 }
+
+// 性能对比下
+
+console.time('queue By linkList');
+const queue = new Queue();
+
+for (let i = 0; i < 100000 * 10; i++) {
+  queue.add(i);
+}
+
+for (let i = 0; i < 100000 * 10; i++) {
+  queue.deQueue();
+}
+
+console.timeEnd('queue By linkList');
+
+console.time('queue By array');
+const arr = [];
+for (let i = 0; i < 100000; i++) {
+  arr.push(i);
+}
+
+for (let i = 0; i < 100000; i++) {
+  arr.shift();
+}
+
+console.timeEnd('queue By array');
