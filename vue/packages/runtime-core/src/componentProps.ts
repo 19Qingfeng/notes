@@ -1,5 +1,5 @@
 import { reactive } from '@vue/reactivity';
-import { hasOwn } from '@vue/share';
+import { hasOwn, ShapeFlags } from '@vue/share';
 
 /**
  *
@@ -32,6 +32,17 @@ export function initProps(instance, rawProps) {
   // 这里自己实现简单点就使用 reactive
   instance.props = reactive(props);
   instance.attrs = attrs;
+}
+
+/**
+ * 初始化组件插槽
+ * @param instance
+ * @param children
+ */
+export function initSlots(instance, children) {
+  if (instance.vnode.shapeFlag & ShapeFlags.SLOTS_CHILDREN) {
+    instance.slots = children;
+  }
 }
 
 /**

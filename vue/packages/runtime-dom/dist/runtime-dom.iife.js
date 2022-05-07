@@ -113,6 +113,9 @@ var VueRuntimeDOM = (() => {
   function isPlainObj(value) {
     return typeof value === "object" && value !== null;
   }
+  function isObj(value) {
+    return Object.prototype.toString.call(value) === "[object Object]";
+  }
   function isFunction(value) {
     return typeof value === "function";
   }
@@ -226,7 +229,7 @@ var VueRuntimeDOM = (() => {
       __v_isVNode: true
     };
     if (children) {
-      vnode.shapeFlag |= isString(children) ? 8 /* TEXT_CHILDREN */ : 16 /* ARRAY_CHILDREN */;
+      vnode.shapeFlag |= isString(children) ? 8 /* TEXT_CHILDREN */ : isObj(children) ? 32 /* SLOTS_CHILDREN */ : 16 /* ARRAY_CHILDREN */;
     }
     return vnode;
   }
@@ -271,6 +274,11 @@ var VueRuntimeDOM = (() => {
     instance.props = reactive(props);
     instance.attrs = attrs;
   }
+  function initSlots(instance, children) {
+    if (instance.vnode.shapeFlag & 32 /* SLOTS_CHILDREN */) {
+      instance.slots = children;
+    }
+  }
   function hasPropsChanged(prevProps, nextProps) {
     const prevPropsLength = Object.keys(prevProps);
     const nextPropsLength = Object.keys(nextProps);
@@ -311,13 +319,15 @@ var VueRuntimeDOM = (() => {
       props: {},
       attrs: {},
       proxy: {},
-      setupState: null
+      slots: {},
+      setupState: {}
     };
     return instance;
   }
   var publishPropertyMap = {
     $: (i) => i,
-    $attrs: (i) => i.attrs
+    $attrs: (i) => i.attrs,
+    $slots: (i) => i.slots
   };
   var publishInstanceProxy = {
     get(target, key, receiver) {
@@ -351,8 +361,9 @@ var VueRuntimeDOM = (() => {
     }
   };
   function setupComponent(instance) {
-    const { props, type } = instance.vnode;
+    const { props, type, children } = instance.vnode;
     initProps(instance, props);
+    initSlots(instance, children);
     instance.proxy = new Proxy(instance, publishInstanceProxy);
     const { data = () => ({}), render: render2, setup } = type;
     if (!isFunction(data)) {
@@ -368,7 +379,9 @@ var VueRuntimeDOM = (() => {
           if (handler) {
             handler(...args);
           }
-        }
+        },
+        attrs: instance.attrs,
+        slots: instance.slots
       };
       const setupResult = setup(instance.props, setupContext);
       if (isFunction(setupResult)) {
@@ -376,7 +389,6 @@ var VueRuntimeDOM = (() => {
       } else if (isPlainObj(setupResult)) {
         instance.setupState = proxyRefs(setupResult);
       }
-      console.log(instance, "instance");
     }
     if (!instance.render) {
       instance.render = render2;
@@ -610,6 +622,7 @@ var VueRuntimeDOM = (() => {
       const prevChild = n1.children;
       const nextChild = n2.children;
       if (prevChild !== nextChild) {
+        console.log("join");
         return true;
       }
       if (prevProps === nextProps)
@@ -694,7 +707,7 @@ var VueRuntimeDOM = (() => {
       if (n1 === null) {
         mountChildren(container, n2.children);
       } else {
-        patchChildren(n1.children, n2.children);
+        patchChildren(n1, n2);
       }
     }
     function processElement(n1, n2, container, anchor) {

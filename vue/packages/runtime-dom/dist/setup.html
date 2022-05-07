@@ -11,7 +11,6 @@
 <body>
   <div id="app"></div>
   <!-- <script src="../../../node_modules/@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
-  <!-- <script src="../../reactivity/dist/reactivity.iife.js"></script> -->
   <script src="./runtime-dom.iife.js"></script>
   <script>
     const {
@@ -28,25 +27,44 @@
 
     const VueComponent = {
       setup(props, {
-        emit
+        emit,
+        slots
       }) {
         const name = ref('19Qingfeng')
         const age = ref(25)
         // return 函数会替代组件render方法 返回render函数并不会进行proxyRef
+        setTimeout(() => {
+          name.value = 'wang,haoyu'
+        }, 1000)
         return () => {
-          return h('div', {
-            onClick: () => {
-              emit('hello')
-            }
-          }, `你好-${name.value}-${age.value}`)
+          // 这里执行了 但是DOMDiff对比后 
+          console.log('parent Render')
+          return h(Fragment, {}, [
+            h('div', name.value),
+            h(ChildrenCmp, {}, {
+              default: () => h('p', `${age.value}`)
+            })
+          ])
         }
       },
+    }
+
+    const ChildrenCmp = {
+      data() {
+        return {
+          state: 1
+        }
+      },
+      render() {
+        console.log('rerender')
+        return h('div', {}, this.$slots.default())
+      }
     }
 
     render(h(VueComponent, {
       onHello: () => {
         alert('Hello')
-      }
+      },
     }), app)
   </script>
 </body>

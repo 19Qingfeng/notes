@@ -224,6 +224,7 @@ export function createRenderer(renderOptions) {
    * @param n2 新的节点 vnode
    */
   function patchChildren(n1, n2) {
+    // !Fragment下其实是存在问题的
     const n1Children = n1.children;
     const n2Children = n2.children;
 
@@ -290,7 +291,9 @@ export function createRenderer(renderOptions) {
     // 考虑插槽
     const prevChild = n1.children;
     const nextChild = n2.children;
+    // !这里不太准确其实 这里判断了引用类型一定是不太想等的
     if (prevChild !== nextChild) {
+      console.log('join');
       return true;
     }
     if (prevProps === nextProps) return false;
@@ -391,7 +394,6 @@ export function createRenderer(renderOptions) {
       }
     }
     // 3.儿子
-    // debugger;
     if (children) {
       if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
         // 文本
@@ -456,7 +458,7 @@ export function createRenderer(renderOptions) {
       // 直接挂载对应n2的children
       mountChildren(container, n2.children);
     } else {
-      patchChildren(n1.children, n2.children);
+      patchChildren(n1, n2);
     }
   }
 

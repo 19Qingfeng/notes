@@ -1,7 +1,7 @@
 import { reactive } from '@vue/reactivity';
 import { hasOwn, isFunction, isPlainObj } from '@vue/share';
 import { proxyRefs } from 'packages/reactivity/src/ref';
-import { initProps } from './componentProps';
+import { initProps, initSlots } from './componentProps';
 
 /**
  * 创建组件实例
@@ -28,8 +28,10 @@ export function createComponentInstance(vnode) {
     attrs: {},
     // 代理对象 结合props和state和attrs
     proxy: {},
+    // 插槽
+    slots: {},
     // composition
-    setupState: null,
+    setupState: {},
   };
   return instance;
 }
@@ -38,6 +40,7 @@ export function createComponentInstance(vnode) {
 const publishPropertyMap = {
   $: (i) => i,
   $attrs: (i) => i.attrs,
+  $slots: (i) => i.slots,
 };
 
 const publishInstanceProxy = {
@@ -81,9 +84,11 @@ const publishInstanceProxy = {
  * @param instance
  */
 export function setupComponent(instance) {
-  const { props, type } = instance.vnode;
+  const { props, type, children } = instance.vnode;
   // 初始化Props
   initProps(instance, props);
+  // 初始化组件插槽
+  initSlots(instance, children);
   //  处理代理生成代理属性 this
   instance.proxy = new Proxy(instance, publishInstanceProxy);
 
@@ -113,6 +118,8 @@ export function setupComponent(instance) {
           handler(...args);
         }
       },
+      attrs: instance.attrs,
+      slots: instance.slots,
     };
 
     const setupResult = setup(instance.props, setupContext);
@@ -124,7 +131,6 @@ export function setupComponent(instance) {
       // 返回的是数据 注意对于返回的对象内部（一层Ref）省略.value访问
       instance.setupState = proxyRefs(setupResult);
     }
-    console.log(instance, 'instance');
   }
 
   // 如果经过上述仍然不存在render

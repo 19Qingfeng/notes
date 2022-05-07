@@ -2,6 +2,10 @@ export function isPlainObj(value: any): value is object {
   return typeof value === 'object' && value !== null;
 }
 
+export function isObj(value: any): value is object {
+  return Object.prototype.toString.call(value) === '[object Object]';
+}
+
 export function isFunction(value: any): value is Function {
   return typeof value === 'function';
 }

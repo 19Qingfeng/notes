@@ -1,0 +1,1 @@
+1. shouldUpdateComponent 的截图中 child对比不完全 现在是引用类型
