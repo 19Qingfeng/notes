@@ -2,7 +2,7 @@ import { reactive } from '@vue/reactivity';
 import { hasOwn, isArray, isString, ShapeFlags } from '@vue/share';
 import { ReactiveEffect } from 'packages/reactivity/src/effect';
 import { createComponentInstance, setupComponent } from './component';
-import { updateProps } from './componentProps';
+import { hasPropsChanged, updateProps } from './componentProps';
 import { queueJob } from './scheduler';
 import { getSequence } from './sequence';
 import { createVNode, Fragment, isSameVNodeType, Text } from './vnode';
@@ -279,6 +279,28 @@ export function createRenderer(renderOptions) {
   }
 
   /**
+   * 判断组件是否需要更新
+   * @param n1
+   * @param n2
+   */
+  function shouldUpdateComponent(n1, n2) {
+    // 旧的PropsValue
+    const prevProps = n1.props;
+    const nextProps = n2.props;
+    // 考虑插槽
+    const prevChild = n1.children;
+    const nextChild = n2.children;
+    if (prevChild !== nextChild) {
+      return true;
+    }
+    if (prevProps === nextProps) return false;
+    if (hasPropsChanged(prevProps, nextProps)) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * 更新组件
    * 组件的状态变化一定会更新组件
    * 当组件的状态改变时，会patch两个组件。同时会patchChildren
@@ -290,11 +312,27 @@ export function createRenderer(renderOptions) {
   function updateComponent(n1, n2) {
     // 组件的话 可以复用组件的实例instance 元素复用的是DOM
     const instance = (n2.component = n1.component);
-    // 旧的PropsValue
-    const prevProps = n1.props;
-    const nextProps = n2.props;
-    // 更新组件props
-    updateProps(instance, prevProps, nextProps);
+
+    // 当需要进行组件更新时，强制调用组件更新update
+    if (shouldUpdateComponent(n1, n2)) {
+      instance.next = n2;
+      // 并不会重复多次调用子组件render，因为这里首次调用了instance.update 相当于执行了 组件更新方法 componentUpdateFn
+      // 之后，如果Props存在改变。当然instance.props是响应式的，所以自然props改变也会触发effect的fn重新执行也是 componentUpdateFn
+      // 重点是，本次调用instance.update时，effect中有两个额外的点:
+      // 1. 他会将当前activeEffect变为当前effect，在trigger中存在判断如果activeEffect和当前effect相同则不会进行重复触法
+      // 2. 其次首先进入 instance.update -> 触发effect执行 -> 会clearEffect清空当前组件所有的依赖数据 -> 执行组件调用方法（componentUpdateFn） -> 由于此时依赖已经被清空 -> 执行fn(componentUpdateFn)时，修改响应式数据无法找到对应的effect -> 自然也不会重新渲染 -> 更新完成props后 -> 在fn内部重新调用render.call(proxy);进行依赖收集
+      // !自然不会重复渲染 这里的渲染其实应该也需要入Queue
+      instance.update(); // 调用update实际内部会调用effect的fn，也就是componentUpdateFn
+    }
+  }
+
+  function updateComponentPreRender(instance) {
+    const { next } = instance;
+    instance.next = null; // 清空上一次的next
+    // 更新实例的vnode
+    instance.vnode = next;
+    // 更新属性
+    updateProps(instance.props, next.props);
   }
 
   /**
@@ -307,6 +345,10 @@ export function createRenderer(renderOptions) {
     const { render, proxy } = instance;
     const componentUpdateFn = () => {
       if (instance.isMounted) {
+        if (instance.next) {
+          // 更新最新的Props属性 表示是state改变
+          updateComponentPreRender(instance);
+        }
         // 组件更新会进入这里
         // 当前组件内部State改变组件更新 获取当前组件最新subTree
         const subTree = render.call(proxy);

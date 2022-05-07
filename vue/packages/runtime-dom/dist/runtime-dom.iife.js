@@ -24,67 +24,9 @@ var VueRuntimeDOM = (() => {
     Text: () => Text,
     domOps: () => renderOptions,
     h: () => h,
+    ref: () => ref,
     render: () => render
   });
-
-  // packages/share/src/index.ts
-  function isPlainObj(value) {
-    return typeof value === "object" && value !== null;
-  }
-  function isFunction(value) {
-    return typeof value === "function";
-  }
-  var isArray = Array.isArray;
-  var hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
-  var isString = (val) => typeof val === "string";
-
-  // packages/runtime-core/src/vnode.ts
-  var Text = Symbol("Text");
-  var Fragment = Symbol("Fragment");
-  function isVNode(value) {
-    return value ? value.__v_isVNode === true : false;
-  }
-  function isSameVNodeType(n1, n2) {
-    return n1.type === n2.type && n1.key === n2.key;
-  }
-  function createVNode(type, props, children = null) {
-    let shapeFlag = isString(type) ? 1 /* ELEMENT */ : isPlainObj(type) ? 4 /* STATEFUL_COMPONENT */ : 0;
-    const vnode = {
-      type,
-      props,
-      children,
-      key: props == null ? void 0 : props.key,
-      el: null,
-      shapeFlag,
-      __v_isVNode: true
-    };
-    if (children) {
-      vnode.shapeFlag |= isString(children) ? 8 /* TEXT_CHILDREN */ : 16 /* ARRAY_CHILDREN */;
-    }
-    return vnode;
-  }
-
-  // packages/runtime-core/src/h.ts
-  function h(type, propsOrChildren, children) {
-    const length = arguments.length;
-    if (length === 2) {
-      if (isPlainObj(propsOrChildren) && !isArray(propsOrChildren)) {
-        if (isVNode(propsOrChildren)) {
-          return createVNode(type, null, [propsOrChildren]);
-        }
-        return createVNode(type, propsOrChildren);
-      } else {
-        return createVNode(type, null, propsOrChildren);
-      }
-    } else {
-      if (length > 3) {
-        children = Array.from(arguments).slice(3);
-      } else if (length === 3 && isVNode(children)) {
-        children = [children];
-      }
-      return createVNode(type, propsOrChildren, children);
-    }
-  }
 
   // packages/reactivity/src/effect.ts
   var activeEffect;
@@ -167,6 +109,17 @@ var VueRuntimeDOM = (() => {
     deps.length = 0;
   }
 
+  // packages/share/src/index.ts
+  function isPlainObj(value) {
+    return typeof value === "object" && value !== null;
+  }
+  function isFunction(value) {
+    return typeof value === "function";
+  }
+  var isArray = Array.isArray;
+  var hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+  var isString = (val) => typeof val === "string";
+
   // packages/reactivity/src/baseHandler.ts
   var mutableHandlers = {
     get(target, key, receiver) {
@@ -208,6 +161,98 @@ var VueRuntimeDOM = (() => {
     return proxy;
   };
 
+  // packages/reactivity/src/ref.ts
+  function proxyRefs(object) {
+    return new Proxy(object, {
+      get(target, key, recevier) {
+        const r = Reflect.get(target, key, recevier);
+        return r.__v_isRef__ ? r.value : r;
+      },
+      set(target, key, value, recevier) {
+        const oldValue = target[key];
+        if (oldValue.__v_isRef__) {
+          oldValue.value = value;
+          return true;
+        } else {
+          return Reflect.set(target, key, value, recevier);
+        }
+      }
+    });
+  }
+  function ref(value) {
+    return new RefImpl(value);
+  }
+  function toReactive(value) {
+    return isPlainObj(value) ? reactive(value) : value;
+  }
+  var RefImpl = class {
+    constructor(rawValue) {
+      this.rawValue = rawValue;
+      this.__v_isRef__ = true;
+      this._deps = /* @__PURE__ */ new Set();
+      this._value = toReactive(rawValue);
+    }
+    get value() {
+      trackEffect(this._deps);
+      return this._value;
+    }
+    set value(newValue) {
+      if (this.rawValue !== newValue) {
+        this._value = toReactive(newValue);
+        this.rawValue = newValue;
+        triggerEffects(this._deps);
+      }
+    }
+  };
+
+  // packages/runtime-core/src/vnode.ts
+  var Text = Symbol("Text");
+  var Fragment = Symbol("Fragment");
+  function isVNode(value) {
+    return value ? value.__v_isVNode === true : false;
+  }
+  function isSameVNodeType(n1, n2) {
+    return n1.type === n2.type && n1.key === n2.key;
+  }
+  function createVNode(type, props, children = null) {
+    let shapeFlag = isString(type) ? 1 /* ELEMENT */ : isPlainObj(type) ? 4 /* STATEFUL_COMPONENT */ : 0;
+    const vnode = {
+      type,
+      props,
+      children,
+      key: props == null ? void 0 : props.key,
+      el: null,
+      shapeFlag,
+      __v_isVNode: true
+    };
+    if (children) {
+      vnode.shapeFlag |= isString(children) ? 8 /* TEXT_CHILDREN */ : 16 /* ARRAY_CHILDREN */;
+    }
+    return vnode;
+  }
+
+  // packages/runtime-core/src/h.ts
+  function h(type, propsOrChildren, children) {
+    const length = arguments.length;
+    if (length === 2) {
+      if (isPlainObj(propsOrChildren) && !isArray(propsOrChildren)) {
+        if (isVNode(propsOrChildren)) {
+          return createVNode(type, null, [propsOrChildren]);
+        }
+        return createVNode(type, propsOrChildren);
+      } else {
+        return createVNode(type, null, propsOrChildren);
+      }
+    } else {
+      if (length > 3) {
+        children = Array.from(arguments).slice(3);
+      } else if (length === 3 && isVNode(children)) {
+        children = [children];
+      }
+      return createVNode(type, propsOrChildren, children);
+    }
+  }
+
   // packages/runtime-core/src/componentProps.ts
   function initProps(instance, rawProps) {
     const props = {};
@@ -241,15 +286,14 @@ var VueRuntimeDOM = (() => {
     }
     return false;
   }
-  function updateProps(instance, prevProps, nextProps) {
-    if (hasPropsChanged(prevProps, nextProps)) {
-      for (let key in nextProps) {
-        instance.props[key] = nextProps[key];
-      }
-      for (let oldKey in instance.props) {
-        if (!hasOwn(nextProps, oldKey)) {
-          delete instance.props[oldKey];
-        }
+  function updateProps(prevProps, nextProps) {
+    console.log(prevProps, "\u6539\u53D8ReactiveData props \u5E94\u8BE5\u4E5F\u4F1A\u89E6\u53D1effect\u6267\u884C\u5BF9\u5427");
+    for (let key in nextProps) {
+      prevProps[key] = nextProps[key];
+    }
+    for (let oldKey in prevProps) {
+      if (!hasOwn(nextProps, oldKey)) {
+        delete prevProps.props[oldKey];
       }
     }
   }
@@ -266,7 +310,8 @@ var VueRuntimeDOM = (() => {
       propsOptions: vnode.type.props,
       props: {},
       attrs: {},
-      proxy: {}
+      proxy: {},
+      setupState: null
     };
     return instance;
   }
@@ -276,9 +321,11 @@ var VueRuntimeDOM = (() => {
   };
   var publishInstanceProxy = {
     get(target, key, receiver) {
-      const { props, data } = target;
+      const { props, data, setupState } = target;
       if (hasOwn(data, key)) {
         return data[key];
+      } else if (hasOwn(setupState, key)) {
+        return setupState[key];
       } else if (hasOwn(props, key)) {
         return props[key];
       } else {
@@ -290,9 +337,12 @@ var VueRuntimeDOM = (() => {
       }
     },
     set(target, key, value) {
-      const { props, data } = target;
+      const { props, data, setupState } = target;
       if (hasOwn(data, key)) {
         data[key] = value;
+        return true;
+      } else if (hasOwn(setupState, key)) {
+        setupState[key] = value;
         return true;
       } else if (hasOwn(props, key)) {
         console.warn("Don't Revise Component Props");
@@ -304,12 +354,33 @@ var VueRuntimeDOM = (() => {
     const { props, type } = instance.vnode;
     initProps(instance, props);
     instance.proxy = new Proxy(instance, publishInstanceProxy);
-    const { data = () => ({}), render: render2 } = type;
+    const { data = () => ({}), render: render2, setup } = type;
     if (!isFunction(data)) {
       console.error("Component Data Must Be Function");
     }
     instance.data = reactive(data.call(instance.proxy));
-    instance.render = render2;
+    if (setup) {
+      const setupContext = {
+        emit: (eventName, ...args) => {
+          const event = `on${eventName.slice(0, 1).toUpperCase()}${eventName.slice(1)}`;
+          const originalEvent = instance.vnode.props;
+          const handler = originalEvent[event];
+          if (handler) {
+            handler(...args);
+          }
+        }
+      };
+      const setupResult = setup(instance.props, setupContext);
+      if (isFunction(setupResult)) {
+        instance.render = setupResult;
+      } else if (isPlainObj(setupResult)) {
+        instance.setupState = proxyRefs(setupResult);
+      }
+      console.log(instance, "instance");
+    }
+    if (!instance.render) {
+      instance.render = render2;
+    }
   }
 
   // packages/runtime-core/src/scheduler.ts
@@ -533,16 +604,41 @@ var VueRuntimeDOM = (() => {
       setupComponent(instance);
       setupRenderEffect(instance, container, anchor);
     }
-    function updateComponent(n1, n2) {
-      const instance = n2.component = n1.component;
+    function shouldUpdateComponent(n1, n2) {
       const prevProps = n1.props;
       const nextProps = n2.props;
-      updateProps(instance, prevProps, nextProps);
+      const prevChild = n1.children;
+      const nextChild = n2.children;
+      if (prevChild !== nextChild) {
+        return true;
+      }
+      if (prevProps === nextProps)
+        return false;
+      if (hasPropsChanged(prevProps, nextProps)) {
+        return true;
+      }
+      return false;
+    }
+    function updateComponent(n1, n2) {
+      const instance = n2.component = n1.component;
+      if (shouldUpdateComponent(n1, n2)) {
+        instance.next = n2;
+        instance.update();
+      }
+    }
+    function updateComponentPreRender(instance) {
+      const { next } = instance;
+      instance.next = null;
+      instance.vnode = next;
+      updateProps(instance.props, next.props);
     }
     function setupRenderEffect(instance, container, anchor) {
       const { render: render2, proxy } = instance;
       const componentUpdateFn = () => {
         if (instance.isMounted) {
+          if (instance.next) {
+            updateComponentPreRender(instance);
+          }
           const subTree = render2.call(proxy);
           patch(instance.subTree, subTree, container, anchor);
           instance.subTree = subTree;

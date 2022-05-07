@@ -37,7 +37,7 @@ export function initProps(instance, rawProps) {
 /**
  * 检查是否需要更新
  */
-function hasPropsChanged(prevProps, nextProps) {
+export function hasPropsChanged(prevProps, nextProps) {
   // 首先检查key的个数是否改变
   const prevPropsLength = Object.keys(prevProps);
   const nextPropsLength = Object.keys(nextProps);
@@ -60,17 +60,15 @@ function hasPropsChanged(prevProps, nextProps) {
 /**
  * 更新Props
  */
-export function updateProps(instance, prevProps, nextProps) {
-  if (hasPropsChanged(prevProps, nextProps)) {
-    // 更新现有属性
-    for (let key in nextProps) {
-      instance.props[key] = nextProps[key];
-    }
-    // 删除老的属性
-    for (let oldKey in instance.props) {
-      if (!hasOwn(nextProps, oldKey)) {
-        delete instance.props[oldKey];
-      }
+export function updateProps(prevProps, nextProps) {
+  console.log(prevProps, '改变ReactiveData props 应该也会触发effect执行对吧');
+  for (let key in nextProps) {
+    prevProps[key] = nextProps[key];
+  }
+  // 删除老的属性
+  for (let oldKey in prevProps) {
+    if (!hasOwn(nextProps, oldKey)) {
+      delete prevProps.props[oldKey];
     }
   }
 }
