@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script src="../../../node_modules/@vue/runtime-dom/dist/runtime-dom.global.js"></script>
+  <!-- <script src="./runtime-dom.iife.js"></script> -->
+  <script>
+    const {
+      // nodeOps,
+      // createRenderer,
+      // DOM中的方法默认是使用DOM API提供的借口
+      Text,
+      render,
+      h,
+      Fragment,
+      onBeforeMount,
+      onMounted,
+      onUpdated,
+      onBeforeUpdate,
+      toRefs,
+      reactive
+    } = VueRuntimeDOM
+
+    const VueComponent = {
+      setup() {
+        const name = reactive({
+          name: 'wang.haoyu'
+        })
+        onBeforeUpdate(() => {
+          console.log('Before Update')
+        })
+        onUpdated(() => {
+          console.log('Updated')
+        })
+        onBeforeMount(() => {
+          console.log('Before Mounted')
+        })
+        onMounted(() => {
+          console.log('Hello Mounted')
+        })
+
+        const handleClick = () => {
+          name.name = 'Hello World' + Math.random()
+        }
+        // proxyRef 处理reactive为{name:Ref} => proxyObj 之后模板相当于 with(proxyObj) { name }
+        return {
+          handleClick,
+          ...toRefs(name)
+        }
+      },
+      render() {
+        console.log('render')
+        return h('p', {
+          onClick: this.handleClick
+        }, this.name)
+      }
+    }
+
+    // !!!!!这里调试下整体流程 过一下组件渲染
+    render(h(VueComponent), app)
+  </script>
+</body>
+
+</html>
