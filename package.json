@@ -27,6 +27,7 @@
     "promises-aplus-tests": "^2.1.2"
   },
   "devDependencies": {
-    "@babel/preset-typescript": "^7.16.7"
+    "@babel/preset-typescript": "^7.16.7",
+    "@types/react-dom": "^18.0.5"
   }
 }

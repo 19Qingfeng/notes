@@ -9,7 +9,6 @@ function connect() {
   const handler = (req, res) => {
     // 依次执行中间件
     let index = 0;
-    console.log(req.url);
     function next(req, res) {
       middleware[index++](req, res, next);
     }
