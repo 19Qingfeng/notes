@@ -23,6 +23,12 @@ function bindActionCreators(actionCreators, dispatch) {
   }
 }
 
+/**
+ * 单个 actionCreator 执行的逻辑
+ * @param actionCreator 
+ * @param dispatch 
+ * @returns 
+ */
 function bindActionCreator(
   actionCreator,
   dispatch

@@ -18,32 +18,38 @@ import { createStore, combineReducers, bindActionCreators } from 'redux'
 //   console.log('store概念')
 // })
 
-const ADD = 'ADD'
 
-// 创建一个ActionCreator
-const addAction = () => ({ type: ADD })
 
-function reducer(state = { number: 1 }, action) {
+function counter(state = { number: 1 }, action) {
   switch (action.type) {
-    case ADD:
+    case 'add':
       return { number: state.number + 1 }
     default:
       return state
   }
 }
 
-const store = createStore(reducer)
+function name(state = { name: 'wang.haoyu' }, action) {
+  switch (action.type) {
+    case 'add':
+      return { number: '19QIngfeng' }
+    default:
+      return state
+  }
+}
+const store = createStore(combineReducers({
+  name,
+  counter
+}))
+
+store.dispatch({ type: 'add' })
+
+store.getState()
 
 
 // 通过actionCreator派发一个action
 // store.dispatch(addAction())
 
-const action = bindActionCreators({
-  add: addAction
-}, store.dispatch)
 
-action()
-
-console.log(store.getState(), '获得state')
 
 export default store
