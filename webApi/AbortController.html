@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AbortController</title>
+</head>
+
+<body>
+  <div>
+    <button class="download">发送请求</button>
+    <button class="abort">中止请求</button>
+
+    <button class="download2">发送ajax请求</button>
+    <button class="abort2">中止ajax请求</button>
+  </div>
+  <script>
+    /**
+     * fetch 默认可以携带 signal 参数
+     * see: https://developer.mozilla.org/zh-CN/docs/Web/API/AbortController
+     */
+    const controller = new AbortController();
+
+    const signal = controller.signal;
+    // 返回一个 signal 对象，在 timeout 后自动终止，不过目前 chrome 不支持。
+    // see: https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/timeout
+    // const signal = AbortSignal.timeout(20)
+
+    const downloadBtn = document.querySelector('.download');
+    const abortBtn = document.querySelector('.abort');
+
+    downloadBtn.addEventListener('click', fetchVideo);
+
+    abortBtn.addEventListener('click', function () {
+      // 调用
+      controller.abort('我就是想终止~');
+      console.log('Download aborted');
+    });
+
+    const url = 'https://jsonplaceholder.typicode.com/posts/1';
+
+    /**
+     * 浏览器已经开始为 AbortController 和 AbortSignal 接口（也就是 Abort API）添加实验性支持，允许像 Fetch 和 XHR 这样的操作在还未完成时被中止。请参阅接口页面了解更多详情
+     */
+    function fetchVideo() {
+      // ...
+      fetch(url, {
+        signal
+      }).then(function (response) {
+        // ...
+
+      }).catch(function (e) {
+        console.log(signal.reason, '中止原因')
+      })
+    }
+
+    /**
+     * 虽说 ajax 不支持，但是同样可以利用 AbortSignal.onabort 进行实现
+     * see: https://developer.mozilla.org/zh-CN/docs/Web/API/AbortSignal/abort_event
+     */
+    const downloadBtn2 = document.querySelector('.download2');
+    const abortBtn2 = document.querySelector('.abort2');
+
+    const controller2 = new AbortController();
+
+    const signal2 = controller2.signal;
+
+    function fetchVideo2(signal) {
+      const xhr = new XMLHttpRequest(),
+        method = "GET";
+
+      xhr.open(method, url, true);
+
+      xhr.send();
+
+      createJqueryAjaxAbortAdapter(xhr, signal)
+
+      return () => {
+        // 调用 controller2 的终止
+        controller2.abort()
+      }
+    }
+
+    function createJqueryAjaxAbortAdapter(xhr, signal) {
+      // 监听 signal 的 abort 事件
+      signal.onabort = () => {
+        xhr.abort()
+      }
+    }
+
+    let abort
+    downloadBtn2.addEventListener('click', () => {
+      abort = fetchVideo2(signal2)
+    });
+
+    abortBtn2.addEventListener('click', function () {
+      if (abort) {
+        abort()
+      }
+    });
+  </script>
+</body>
+
+</html>
