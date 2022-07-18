@@ -30,7 +30,7 @@ export const maxSubArray = function (nums: number[]) {
       temp = max = value
       continue;
     }
-    // TODO: 这里大于自身 而非0
+    // TODO: 这里大于自身 而非 0
     temp = temp + value < value ? value : temp + value
     max = Math.max(max, temp)
   }
