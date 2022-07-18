@@ -1,0 +1,1 @@
+export const HOOK_MARK = 'RC_FORM_INTERNAL_HOOKS';
