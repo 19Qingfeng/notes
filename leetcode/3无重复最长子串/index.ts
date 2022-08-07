@@ -7,6 +7,8 @@
  * @param {string} s
  * @return {number}
  */
+
+// abcabcbb
 export const lengthOfLongestSubstring = function (s: string) {
   const stringList: string[] = [];
   let r: number = 0;
@@ -17,9 +19,9 @@ export const lengthOfLongestSubstring = function (s: string) {
     if (i !== 0) {
       stringList.shift();
     }
-
-    while (r < s.length && !stringList.includes(s[r])) {
-      stringList.push(s[r]);
+    // r = 0 ; stringList 
+    while (r < s.length && !stringList.includes(s[r])) { // ,'a'
+      stringList.push(s[r]); // ['a','b','c'] r = 3
       r++;
     }
 
