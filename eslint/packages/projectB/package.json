@@ -1,0 +1,17 @@
+{
+  "name": "@project/B",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "npx eslint ./index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@typescript-eslint/parser": "^5.34.0",
+    "eslint": "^8.22.0",
+    "typescript": "^4.7.4"
+  }
+}
